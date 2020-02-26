@@ -44,9 +44,7 @@ public final class Roobik extends MouseAdapter implements KeyListener{
     /** Lista kolejno wybranych w procesie losowania ruchow */ 
     static List<String> randomMovesList = new ArrayList<>();
     /** Lista kolejno wybranych w procesie losowania scian */ 
-    static List<String> randomFacesList = new ArrayList<>();
-    /** Dlugosc listy ruchow */
-    static int dlugoscListy;   
+    static List<String> randomFacesList = new ArrayList<>(); 
     /** Wybrana sciana, dla ktorej interpretowane sa polecenia */
     public static int activeFace;
     
@@ -74,16 +72,9 @@ public final class Roobik extends MouseAdapter implements KeyListener{
     static Canvas3D canvas3D;
     private final PickCanvas pickCanvas;
     
-    static SimpleUniverse universe;
-    private final Timer timer;
-
     
-    //TRANSFORMGROUP POSZCZEGOLNYCH ELEMENTOW
-    static TransformGroup observer;  
+    private final Timer timer;  
 
-    
-
-    
     
     /** 
      * Dopisanie do listy numeru aktualnie aktywnej sciany 
@@ -117,18 +108,18 @@ public final class Roobik extends MouseAdapter implements KeyListener{
                 default: break;
             }
             if(null != movesList.get(i)) switch (movesList.get(i)) {
-                case "q": command("q");  break;
-                case "a": command("a");  break;
-                case "z": command("z");  break;
-                case "j": command("j");  break;
-                case "k": command("k");  break;
-                case "l": command("l");  break;
-                case "x": command("x");  break;
-                case "s": command("s");  break;
-                case "w": command("w");  break;
-                case "o": command("o");  break;
-                case "i": command("i");  break;
-                case "u": command("u");  break;
+                case "left0": command("left0");  break;
+                case "left1": command("left1");  break;
+                case "left2": command("left2");  break;
+                case "down0": command("down0");  break;
+                case "down1": command("down1");  break;
+                case "down2": command("down2");  break;
+                case "right2": command("right2");  break;
+                case "right1": command("right1");  break;
+                case "right0": command("right0");  break;
+                case "up2": command("up2");  break;
+                case "up1": command("up1");  break;
+                case "up0": command("up0");  break;
                 default:break;
             }
     }
@@ -141,7 +132,7 @@ public final class Roobik extends MouseAdapter implements KeyListener{
     private void klikaczWylosowany(){
         noAnimation = true;
         rememberMoves = false;
-        for(int i =0; i<dlugoscListy; i++)
+        for(int i =0; i<randomMovesList.size(); i++)
             playMovesList(i, randomFacesList, randomMovesList);
             
         rememberMoves = true;
@@ -159,12 +150,12 @@ public final class Roobik extends MouseAdapter implements KeyListener{
         @Override
         public void run() {
             if(playReplayOn)
-                if(replayCounter < dlugoscListy){
+                if(replayCounter < pressedKeysList.size()){
                     System.out.println("Krok "+ replayCounter);
                     playMovesList(replayCounter, facesList, pressedKeysList);
                     replayCounter++;
                 } else
-                if(replayCounter == dlugoscListy){  
+                if(replayCounter == pressedKeysList.size()){  
                     blockInput = false;
                     rememberMoves = true;
                     playReplayOn = false;
@@ -260,7 +251,7 @@ public final class Roobik extends MouseAdapter implements KeyListener{
      * Wybor kierunku obrotu - poziomo - oraz ustawienie skoku animacji, {@link #rotation},
      * w zaleznosci od wartosci {@link #noAnimation}.
      */
-    private void rotationRoll(boolean positive){
+    private void rotationPitch(boolean positive){
         if(positive == true){
             if(!noAnimation)rotation.rotY(Math.PI/40);
             else rotation.rotY(Math.PI/2);
@@ -275,7 +266,7 @@ public final class Roobik extends MouseAdapter implements KeyListener{
      * Wybor kierunku obrotu - pionowo - oraz ustawienie skoku animacji, {@link #rotation},
      * w zaleznosci od wartosci {@link #noAnimation}.
      */
-    private void rotationPitch( boolean positive){
+    private void rotationRoll (boolean positive){
         if(positive == true){
             if(!noAnimation)rotation.rotX(Math.PI/40);
             else rotation.rotX(Math.PI/2);
@@ -319,7 +310,7 @@ public final class Roobik extends MouseAdapter implements KeyListener{
         //RAMKA
         config = SimpleUniverse.getPreferredConfiguration();
         canvas3D = new Canvas3D(config);
-        universe = new SimpleUniverse(canvas3D);
+        SimpleUniverse universe = new SimpleUniverse(canvas3D);
         Frame frame = new Frame("Kostka ogurat tego typu bec");       
         frame.setResizable(false);
         canvas3D.setSize(800, 800);
@@ -370,7 +361,7 @@ public final class Roobik extends MouseAdapter implements KeyListener{
             List<String> availableFaces = Arrays.asList(
                     "0", "1", "2", "3", "4", "5", "6");
             List<String> availableMoves = Arrays.asList(
-                    "u", "i", "o", "w", "s", "x", "j", "k", "l", "q", "a", "z");
+                    "up0", "up1", "up2", "right0", "right1", "right2", "down0", "down1", "down2", "left0", "left1", "left2");
             randomMovesList.add(availableMoves.get(klawisz));
             randomFacesList.add(availableFaces.get(sciana));      
         }
@@ -397,27 +388,7 @@ public final class Roobik extends MouseAdapter implements KeyListener{
         if (trafiony == null) {
         }else if(!blockInput){
             Object id = trafiony.getNode(PickResult.SHAPE3D).getUserData();
-            if(id == "0"){command("0");}       
-            else if(id == "1"){command("1");}  
-            else if(id == "2"){command("2");}   
-            else if(id == "3"){command("3");}   
-            else if(id == "4"){command("4");}   
-            else if(id == "5"){command("5");}   
-            else if(id == "s11"){command("q");} 
-            else if(id == "s10"){command("a");}
-            else if(id == "s9"){command("z");} 
-            else if(id == "s8"){command("j");} 
-            else if(id == "s7"){command("k");} 
-            else if(id == "s6"){command("l");} 
-            else if(id == "s5"){command("x");} 
-            else if(id == "s4"){command("s");} 
-            else if(id == "s3"){command("w");} 
-            else if(id == "s2"){command("o");} 
-            else if(id == "s1"){command("i");} 
-            else if(id == "s0"){command("u");} 
-            else if(id == "r"){command("r");} 
-            else if(id == "p"){command("p");} 
-            else if(id == "t"){command("t");} 
+            command(id.toString());
                                                             
         }
     }
@@ -443,25 +414,22 @@ public final class Roobik extends MouseAdapter implements KeyListener{
                 activeFaceBuff = activeFace;
                 rubiksCube.resetKostki();
                 losowyUklad();
-                dlugoscListy = randomMovesList.size();
                 klikaczWylosowany();
                 activeFace = activeFaceBuff;
                 break;   
             case "p":  //odtwarzanie
                 activeFaceBuff = activeFace;                
                 rubiksCube.resetKostki();
-                dlugoscListy = randomMovesList.size();
                 klikaczWylosowany();
-                dlugoscListy = pressedKeysList.size();
                 rememberMoves = false;   
                 playReplayOn = true;
                 break; 
-            case "w":
-                if (rememberMoves) pressedKeysList.add("w");
+            case "right0":
+                if (rememberMoves) pressedKeysList.add("right0");
                 if(activeFace >=0 && activeFace <=3){
                     middleElement = 10;
                     createElementsToRotateList(0, 1, 2, 11, 19, 18, 17, 9);
-                    rotationRoll(true);
+                    rotationPitch(true);
                 }else
                     if(activeFace == 4){
                         middleElement = 21;
@@ -473,12 +441,12 @@ public final class Roobik extends MouseAdapter implements KeyListener{
                             createElementsToRotateList(0, 3, 6, 7, 8, 5, 2, 1);
                             rotationYaw(false);
                         }   break;
-            case "s":
-                if (rememberMoves) pressedKeysList.add("s");
+            case "right1":
+                if (rememberMoves) pressedKeysList.add("right1");
                 if(activeFace >=0 && activeFace <=3){
                     middleElement = -1;
                     createElementsToRotateList(3, 4, 5, 13, 22, 21, 20, 12);
-                    rotationRoll(true);
+                    rotationPitch(true);
                 }else
                     if(activeFace == 4){
                         middleElement = -1;
@@ -490,12 +458,12 @@ public final class Roobik extends MouseAdapter implements KeyListener{
                             createElementsToRotateList(9, 12, 14, 15, 16, 13, 11, 10);
                             rotationYaw(false);
                         }   break;
-            case "x":
-                if (rememberMoves) pressedKeysList.add("x");
+            case "right2":
+                if (rememberMoves) pressedKeysList.add("right2");
                 if(activeFace >=0 && activeFace <=3){
                     middleElement = 15;
                     createElementsToRotateList(6, 7, 8, 16, 25, 24, 23, 14);
-                    rotationRoll(true);
+                    rotationPitch(true);
                 }else
                     if(activeFace == 4){
                         middleElement = 4;
@@ -507,12 +475,12 @@ public final class Roobik extends MouseAdapter implements KeyListener{
                             createElementsToRotateList(17, 20, 23, 24, 25, 22, 19, 18);
                             rotationYaw(false);
                         }   break;
-            case "q":
-                if (rememberMoves) pressedKeysList.add("q");
+            case "left0":
+                if (rememberMoves) pressedKeysList.add("left0");
                 if(activeFace >=0 && activeFace <=3){
                     middleElement = 10;
                     createElementsToRotateList(9, 17, 18, 19, 11, 2, 1, 0);
-                    rotationRoll(false);
+                    rotationPitch(false);
                 }else
                     if(activeFace == 4){
                         middleElement = 21;
@@ -524,12 +492,12 @@ public final class Roobik extends MouseAdapter implements KeyListener{
                             createElementsToRotateList(0, 1, 2, 5, 8, 7, 6, 3);
                             rotationYaw(true);
                         }   break;
-            case "a":
-                if (rememberMoves) pressedKeysList.add("a");
+            case "left1":
+                if (rememberMoves) pressedKeysList.add("left1");
                 if(activeFace >=0 && activeFace <=3){
                     middleElement = -1;
                     createElementsToRotateList(12, 20, 21, 22, 13, 5, 4, 3);
-                    rotationRoll(false);
+                    rotationPitch(false);
                 }else
                     if(activeFace == 4){
                         middleElement = -1;
@@ -541,12 +509,12 @@ public final class Roobik extends MouseAdapter implements KeyListener{
                             createElementsToRotateList(9, 10, 11, 13, 16, 15, 14, 12);
                             rotationYaw(true);
                         }   break;
-            case "z":                
-                if (rememberMoves) pressedKeysList.add("z");
+            case "left2":                
+                if (rememberMoves) pressedKeysList.add("left2");
                 if(activeFace >=0 && activeFace <=3){
                     middleElement = 15;
                     createElementsToRotateList(14, 23, 24, 25, 16, 8, 7, 6);
-                    rotationRoll(false);
+                    rotationPitch(false);
                 }else
                     if(activeFace == 4){
                         middleElement = 4;
@@ -558,17 +526,17 @@ public final class Roobik extends MouseAdapter implements KeyListener{
                             createElementsToRotateList(17, 18, 19, 22, 25, 24, 23, 20);
                             rotationYaw(true);
                         }   break;
-            case "j":
-                if (rememberMoves) pressedKeysList.add("j");
+            case "down0":
+                if (rememberMoves) pressedKeysList.add("down0");
                 if(activeFace == 1 || activeFace == 4 || activeFace == 5){
                     middleElement = 12;
                     createElementsToRotateList(0, 3, 6, 14, 23, 20, 17, 9);
-                    rotationPitch(true);
+                    rotationRoll(true);
                 }else
                     if(activeFace == 3){
                         middleElement = 13;
                         createElementsToRotateList(2, 11, 19, 22, 25, 16, 8 , 5);
-                        rotationPitch(false);
+                        rotationRoll(false);
                     }else
                         if(activeFace == 2){
                             middleElement = 4;
@@ -580,17 +548,17 @@ public final class Roobik extends MouseAdapter implements KeyListener{
                                 createElementsToRotateList(17, 20, 23, 24, 25, 22, 19, 18);
                                 rotationYaw(false);
                             }   break;
-            case "k":
-                if (rememberMoves) pressedKeysList.add("k");
+            case "down1":
+                if (rememberMoves) pressedKeysList.add("down1");
                 if(activeFace == 1 || activeFace == 4 || activeFace == 5){
                     middleElement = -1;
                     createElementsToRotateList(1, 4, 7, 15, 24, 21, 18, 10);
-                    rotationPitch(true);
+                    rotationRoll(true);
                 }else
                     if(activeFace == 3){
                         middleElement = -1;
                         createElementsToRotateList(1, 10, 18, 21, 24, 15, 7, 4);
-                        rotationPitch(false);
+                        rotationRoll(false);
                     }else
                         if(activeFace == 2){
                             middleElement = -1;
@@ -602,17 +570,17 @@ public final class Roobik extends MouseAdapter implements KeyListener{
                                 createElementsToRotateList(9, 12, 14, 15, 16, 13, 11, 10);
                                 rotationYaw(false);
                             }   break;
-            case "l":
-                if (rememberMoves) pressedKeysList.add("l");
+            case "down2":
+                if (rememberMoves) pressedKeysList.add("down2");
                 if(activeFace == 1 || activeFace == 4 || activeFace == 5){
                     middleElement = 13;
                     createElementsToRotateList(2, 5, 8, 16, 25, 22, 19, 11);
-                    rotationPitch(true);
+                    rotationRoll(true);
                 }else
                     if(activeFace == 3){
                         middleElement = 12;
                         createElementsToRotateList(0, 9, 17, 20, 23, 14, 6, 3);
-                        rotationPitch(false);
+                        rotationRoll(false);
                     }else
                         if(activeFace == 2){
                             middleElement = 21;
@@ -624,18 +592,17 @@ public final class Roobik extends MouseAdapter implements KeyListener{
                                 createElementsToRotateList(0, 3, 6, 7, 8, 5, 2, 1);
                                 rotationYaw(false);
                             }   break;
-            case "u":
-                if (rememberMoves) pressedKeysList.add("u");
+            case "up0":
+                if (rememberMoves) pressedKeysList.add("up0");
                 if(activeFace == 1 || activeFace == 4 || activeFace == 5){
                     middleElement = 12;
                     createElementsToRotateList(9, 17, 20, 23, 14, 6, 3, 0);
-                    rotationPitch(false);
-                }else
+                    rotationRoll(false);                }else
                     if(activeFace == 3){
                         middleElement = 13;
                         createElementsToRotateList(2, 5, 8, 16, 25, 22, 19, 11);
-                        rotationPitch(true);
-                    }else
+                        rotationRoll(true);
+                   }else
                         if(activeFace == 2){
                             middleElement = 4;
                             createElementsToRotateList(0, 3, 6, 7, 8, 5, 2, 1);
@@ -646,18 +613,18 @@ public final class Roobik extends MouseAdapter implements KeyListener{
                                 createElementsToRotateList(17, 18, 19, 22, 25, 24, 23, 20);
                                 rotationYaw(true);
                             }   break;
-            case "i":
-                if (rememberMoves) pressedKeysList.add("i");
+            case "up1":
+                if (rememberMoves) pressedKeysList.add("up1");
                 if(activeFace == 1 || activeFace == 4 || activeFace == 5){
                     middleElement = -1;
                     createElementsToRotateList(1, 10, 18, 21, 24, 15, 7, 4);
-                    rotationPitch(false);
-                }else
+                    rotationRoll(false);
+               }else
                     if(activeFace == 3){
                         middleElement = -1;
                         createElementsToRotateList(1, 4, 7, 15, 24 ,21, 18, 10);
-                        rotationPitch(true);
-                    }else
+                        rotationRoll(true);
+                   }else
                         if(activeFace == 2){
                             middleElement = -1;
                             createElementsToRotateList(9, 12, 14, 15, 16, 13, 11, 10);
@@ -668,18 +635,18 @@ public final class Roobik extends MouseAdapter implements KeyListener{
                                 createElementsToRotateList(9, 10, 11, 13, 16, 15, 14, 12);
                                 rotationYaw(true);
                             }   break;
-            case "o":
-                if (rememberMoves) pressedKeysList.add("o");
+            case "up2":
+                if (rememberMoves) pressedKeysList.add("up2");
                 if(activeFace == 1 || activeFace == 4 || activeFace == 5){
                     middleElement = 13;
                     createElementsToRotateList(2, 11, 19, 22, 25, 16, 8, 5);
-                    rotationPitch(false);
-                }else
+                    rotationRoll(false);
+               }else
                     if(activeFace == 3){
                         middleElement = 12;
                         createElementsToRotateList(0, 3, 6, 14, 23, 20, 17, 9 );
-                        rotationPitch(true);
-                    }else
+                        rotationRoll(true);
+                   }else
                         if(activeFace == 2){
                             middleElement = 21;
                             createElementsToRotateList(17, 20, 23, 24, 25, 22, 19, 18);
@@ -732,18 +699,18 @@ public final class Roobik extends MouseAdapter implements KeyListener{
     public void keyTyped(KeyEvent ke) {
         if (!blockInput)
             switch (ke.getKeyChar()){
-            case 'w': command("w"); break;
-            case 's': command("s"); break;
-            case 'x': command("x"); break;  
-            case 'q': command("q"); break;
-            case 'a': command("a"); break;
-            case 'z': command("a"); break;      
-            case 'j': command("j");  break;
-            case 'k': command("k"); break;
-            case 'l': command("l"); break;        
-            case 'u': command("u"); break;
-            case 'i': command("i"); break;    
-            case 'o': command("o");  break;
+            case 'w': command("right0"); break;
+            case 's': command("right1"); break;
+            case 'x': command("right2"); break;  
+            case 'q': command("left0"); break;
+            case 'a': command("left1"); break;
+            case 'z': command("left1"); break;      
+            case 'j': command("down0");  break;
+            case 'k': command("down1"); break;
+            case 'l': command("down2"); break;        
+            case 'u': command("up0"); break;
+            case 'i': command("up1"); break;    
+            case 'o': command("up2");  break;
             case 'r': command("r"); break;
             case 'p': command("p"); break;
             case 't': command("t"); break;

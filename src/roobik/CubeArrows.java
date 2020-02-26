@@ -51,9 +51,9 @@ public class CubeArrows {
         wsp.setCoordinate(0, new Point3f(-0.31f + i*0.51f, 0.78f, +0.77f));
         strzalka[i] = new Shape3D(wsp, przezroczystoscS);
         }
-        strzalka[0].setUserData("s0");
-        strzalka[1].setUserData("s1");
-        strzalka[2].setUserData("s2");
+        strzalka[0].setUserData("up0");
+        strzalka[1].setUserData("up1");
+        strzalka[2].setUserData("up2");
         
         for(int i = 3; i < 6; i++){
         wsp = new TriangleArray(3, TriangleArray.COORDINATES);
@@ -62,9 +62,9 @@ public class CubeArrows {
         wsp.setCoordinate(0, new Point3f(0.78f, +0.31f - (i-3)*0.51f, +0.77f)); 
         strzalka[i] = new Shape3D(wsp, przezroczystoscS);
         }
-        strzalka[3].setUserData("s3");
-        strzalka[4].setUserData("s4");
-        strzalka[5].setUserData("s5");
+        strzalka[3].setUserData("right0");
+        strzalka[4].setUserData("right1");
+        strzalka[5].setUserData("right2");
         
         for(int i = 6; i < 9; i++){
             wsp = new TriangleArray(3, TriangleArray.COORDINATES);
@@ -73,9 +73,9 @@ public class CubeArrows {
             wsp.setCoordinate(0, new Point3f(+0.31f - (i-6)*0.51f, -0.78f, +0.77f)); 
             strzalka[i] = new Shape3D(wsp, przezroczystoscS);
             }
-        strzalka[6].setUserData("s6");
-        strzalka[7].setUserData("s7");
-        strzalka[8].setUserData("s8");
+        strzalka[6].setUserData("down2");
+        strzalka[7].setUserData("down1");
+        strzalka[8].setUserData("down0");
         
         for(int i = 9; i < 12; i++){
             wsp = new TriangleArray(3, TriangleArray.COORDINATES);
@@ -84,9 +84,9 @@ public class CubeArrows {
             wsp.setCoordinate(0, new Point3f(-0.78f,-0.31f + (i-9)*0.51f, +0.77f)); 
             strzalka[i] = new Shape3D(wsp, przezroczystoscS);
             }
-        strzalka[9].setUserData("s9");
-        strzalka[10].setUserData("s10");
-        strzalka[11].setUserData("s11");
+        strzalka[9].setUserData("left2");
+        strzalka[10].setUserData("left1");
+        strzalka[11].setUserData("left0");
         
         for(int i = 0; i < 12; i++)
             tg.addChild(strzalka[i]);
