@@ -12,16 +12,14 @@ import javax.media.j3d.TransformGroup;
 import javax.vecmath.Color3f;
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3f;
-import static roobik.Roobik.currentLayout;
+import static roobik.Roobik.currentCubeLayout;
 
 /**
  * Klasa obslugujaca inicjalizacje elementow kostki, a takze losowanie jej ukladu
  * oraz przywrocenie go do stanu poczatkowego
  * @author PotezneSzwagry
  */
-
-
-public class Kostka { 
+public class Cube { 
    public BranchGroup sceneGraph;
    private CubeArrows cubeArrows;
    public TransformGroup tgArrows;
@@ -34,20 +32,18 @@ public class Kostka {
     /** 
      * Przywrocenie ukladu kostki do jego stanu poczatkowego 
      */
-    void resetKostki(){
+    void cubeReset(){
         for (int i=0; i<26; i++){
             cube.elemList[i].reset(); 
-            currentLayout[i]=i; 
+            currentCubeLayout[i]=i; 
         }
     }
       
-
     void rotateArrows(Transform3D rotation){
         cubeArrows.tg.setTransform(rotation);
     }     
     
     private void addElemsSceneGraph(TransformGroup tgCube, BoundingSphere bound) {
-
         //STRZALKI
         cubeArrows = new CubeArrows();
         tgCube.addChild(cubeArrows.tg);
@@ -62,10 +58,10 @@ public class Kostka {
         tgCube.addChild(cube.tg);
         
         //DZIEN DOBRY Z TEJ STRONY MYSZ
-        MouseRotate myszObr = new MouseRotate();
-        myszObr.setTransformGroup(tgCube);
-        myszObr.setSchedulingBounds(bound);
-        sceneGraph.addChild(myszObr);
+        MouseRotate mouseRotate = new MouseRotate();
+        mouseRotate.setTransformGroup(tgCube);
+        mouseRotate.setSchedulingBounds(bound);
+        sceneGraph.addChild(mouseRotate);
  
         //DODANIE ELEMENTOW DO GRAFU        
         CubeButtons cubeButtons = new CubeButtons();
@@ -73,8 +69,7 @@ public class Kostka {
         
         gui.addChild(tgCube);
         
-        sceneGraph.addChild(gui);
-        
+        sceneGraph.addChild(gui); 
     }
     
     final BranchGroup createSceneGraph(BoundingSphere bound){
@@ -101,7 +96,7 @@ public class Kostka {
     }
     
 
-    public Kostka(){
+    public Cube(){
         cube = new CubeCube();
         TransformGroup tgCube = new TransformGroup();
         tgCube.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);

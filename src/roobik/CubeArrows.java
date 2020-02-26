@@ -24,14 +24,15 @@ public class CubeArrows {
     public TransformGroup tg;
     
     private Appearance getAppearance(){
-        Appearance przezroczystoscS = new Appearance();
-        ColoringAttributes ca = new ColoringAttributes(new Color3f(0.15f, 0.1f, 0.3f), NICEST);
-        przezroczystoscS.setColoringAttributes(ca);
-        TransparencyAttributes taS = new TransparencyAttributes();
-        taS.setTransparencyMode(BLENDED);
-        taS.setTransparency(0.45f);
-        przezroczystoscS.setTransparencyAttributes(taS);
-        return przezroczystoscS;   
+        Appearance appearance = new Appearance();
+        ColoringAttributes coloring = new ColoringAttributes(
+                new Color3f(0.15f, 0.1f, 0.3f), NICEST);
+        appearance.setColoringAttributes(coloring);
+        TransparencyAttributes transparency = new TransparencyAttributes();
+        transparency.setTransparencyMode(BLENDED);
+        transparency.setTransparency(0.45f);
+        appearance.setTransparencyAttributes(transparency);
+        return appearance;   
     }
     
     public CubeArrows(){
@@ -39,57 +40,57 @@ public class CubeArrows {
         tg.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
         
         //USTAWIENIE APPEARANCE DLA STRZALEK
-        Appearance przezroczystoscS = getAppearance();
+        Appearance arrowTransparency = getAppearance();
         
         TriangleArray wsp;
-        Shape3D[] strzalka = new Shape3D[12];
+        Shape3D[] arrow = new Shape3D[12];
 
         for(int i = 0; i < 3; i++){
         wsp = new TriangleArray(3, TriangleArray.COORDINATES);
         wsp.setCoordinate(2, new Point3f(-0.71f + i*0.51f, 0.78f, +0.77f)); 
         wsp.setCoordinate(1, new Point3f(-0.51f + i*0.51f, 0.98f, +0.77f));
         wsp.setCoordinate(0, new Point3f(-0.31f + i*0.51f, 0.78f, +0.77f));
-        strzalka[i] = new Shape3D(wsp, przezroczystoscS);
+        arrow[i] = new Shape3D(wsp, arrowTransparency);
         }
-        strzalka[0].setUserData("up0");
-        strzalka[1].setUserData("up1");
-        strzalka[2].setUserData("up2");
+        arrow[0].setUserData("up0");
+        arrow[1].setUserData("up1");
+        arrow[2].setUserData("up2");
         
         for(int i = 3; i < 6; i++){
         wsp = new TriangleArray(3, TriangleArray.COORDINATES);
         wsp.setCoordinate(2, new Point3f(0.78f, +0.71f - (i-3)*0.51f, +0.77f)); 
         wsp.setCoordinate(1, new Point3f(0.98f, +0.51f - (i-3)*0.51f, +0.77f));
         wsp.setCoordinate(0, new Point3f(0.78f, +0.31f - (i-3)*0.51f, +0.77f)); 
-        strzalka[i] = new Shape3D(wsp, przezroczystoscS);
+        arrow[i] = new Shape3D(wsp, arrowTransparency);
         }
-        strzalka[3].setUserData("right0");
-        strzalka[4].setUserData("right1");
-        strzalka[5].setUserData("right2");
+        arrow[3].setUserData("right0");
+        arrow[4].setUserData("right1");
+        arrow[5].setUserData("right2");
         
         for(int i = 6; i < 9; i++){
             wsp = new TriangleArray(3, TriangleArray.COORDINATES);
             wsp.setCoordinate(2, new Point3f(+0.71f - (i-6)*0.51f, -0.78f, +0.77f)); 
             wsp.setCoordinate(1, new Point3f(+0.51f - (i-6)*0.51f, -0.98f, +0.77f));
             wsp.setCoordinate(0, new Point3f(+0.31f - (i-6)*0.51f, -0.78f, +0.77f)); 
-            strzalka[i] = new Shape3D(wsp, przezroczystoscS);
+            arrow[i] = new Shape3D(wsp, arrowTransparency);
             }
-        strzalka[6].setUserData("down2");
-        strzalka[7].setUserData("down1");
-        strzalka[8].setUserData("down0");
+        arrow[6].setUserData("down2");
+        arrow[7].setUserData("down1");
+        arrow[8].setUserData("down0");
         
         for(int i = 9; i < 12; i++){
             wsp = new TriangleArray(3, TriangleArray.COORDINATES);
-            wsp.setCoordinate(2, new Point3f(-0.78f,-0.71f + (i-9)*0.51f, +0.77f)); 
-            wsp.setCoordinate(1, new Point3f(-0.98f,-0.51f + (i-9)*0.51f, +0.77f));
-            wsp.setCoordinate(0, new Point3f(-0.78f,-0.31f + (i-9)*0.51f, +0.77f)); 
-            strzalka[i] = new Shape3D(wsp, przezroczystoscS);
+            wsp.setCoordinate(2, new Point3f(-0.78f, -0.71f + (i-9)*0.51f, +0.77f)); 
+            wsp.setCoordinate(1, new Point3f(-0.98f, -0.51f + (i-9)*0.51f, +0.77f));
+            wsp.setCoordinate(0, new Point3f(-0.78f, -0.31f + (i-9)*0.51f, +0.77f)); 
+            arrow[i] = new Shape3D(wsp, arrowTransparency);
             }
-        strzalka[9].setUserData("left2");
-        strzalka[10].setUserData("left1");
-        strzalka[11].setUserData("left0");
+        arrow[9].setUserData("left2");
+        arrow[10].setUserData("left1");
+        arrow[11].setUserData("left0");
         
         for(int i = 0; i < 12; i++)
-            tg.addChild(strzalka[i]);
+            tg.addChild(arrow[i]);
     
     
     }

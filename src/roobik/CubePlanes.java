@@ -21,69 +21,68 @@ public class CubePlanes {
     public TransformGroup tg;
     
     private Appearance getAppearance(){
-        //USTAWIENIE APPEARANCE DLA PLASZCZYZN
-        Appearance przezroczystosc = new Appearance();
-        TransparencyAttributes ta = new TransparencyAttributes();
-        ta.setTransparencyMode(BLENDED);
-        ta.setTransparency(1.0f);
-        przezroczystosc.setTransparencyAttributes(ta);
-        return przezroczystosc;
+        Appearance transparency = new Appearance();
+        TransparencyAttributes transparencyAttr = new TransparencyAttributes();
+        transparencyAttr.setTransparencyMode(BLENDED);
+        transparencyAttr.setTransparency(1.0f);
+        transparency.setTransparencyAttributes(transparencyAttr);
+        return transparency;
     }
     
     public CubePlanes(){
         tg = new TransformGroup();
-        Shape3D[] plaszczyzna = new Shape3D[6];
+        Shape3D[] plane = new Shape3D[6];
         
         Appearance przezroczystosc = getAppearance();
-        QuadArray plane = new QuadArray (4, QuadArray.COORDINATES);       
-        plane.setCoordinate(0, new Point3f(-0.77f, -0.77f, -0.77f));  
-        plane.setCoordinate(1, new Point3f(-0.77f, -0.77f, +0.77f));
-        plane.setCoordinate(2, new Point3f(-0.77f, 0.77f, +0.77f));
-        plane.setCoordinate(3, new Point3f(-0.77f, 0.77f, -0.77f));
-        plaszczyzna[0] = new Shape3D(plane, przezroczystosc);
-        plaszczyzna[0].setUserData("0");
+        QuadArray planeCoords = new QuadArray (4, QuadArray.COORDINATES);       
+        planeCoords.setCoordinate(0, new Point3f(-0.77f, -0.77f, -0.77f));  
+        planeCoords.setCoordinate(1, new Point3f(-0.77f, -0.77f, +0.77f));
+        planeCoords.setCoordinate(2, new Point3f(-0.77f, 0.77f, +0.77f));
+        planeCoords.setCoordinate(3, new Point3f(-0.77f, 0.77f, -0.77f));
+        plane[0] = new Shape3D(planeCoords, przezroczystosc);
+        plane[0].setUserData("face0");
         //1
-        plane = new QuadArray (4, QuadArray.COORDINATES);
-        plane.setCoordinate(0, new Point3f(-0.77f, -0.77f, +0.77f));  
-        plane.setCoordinate(1, new Point3f(0.77f, -0.77f, +0.77f));
-        plane.setCoordinate(2, new Point3f(0.77f, 0.77f, +0.77f));
-        plane.setCoordinate(3, new Point3f(-0.77f, 0.77f, +0.77f));
-        plaszczyzna[1] = new Shape3D(plane, przezroczystosc);
-        plaszczyzna[1].setUserData("1");
+        planeCoords = new QuadArray (4, QuadArray.COORDINATES);
+        planeCoords.setCoordinate(0, new Point3f(-0.77f, -0.77f, +0.77f));  
+        planeCoords.setCoordinate(1, new Point3f(0.77f, -0.77f, +0.77f));
+        planeCoords.setCoordinate(2, new Point3f(0.77f, 0.77f, +0.77f));
+        planeCoords.setCoordinate(3, new Point3f(-0.77f, 0.77f, +0.77f));
+        plane[1] = new Shape3D(planeCoords, przezroczystosc);
+        plane[1].setUserData("face1");
         //2
-        plane = new QuadArray (4, QuadArray.COORDINATES);
-        plane.setCoordinate(0, new Point3f(0.77f, +0.77f, -0.77f));  
-        plane.setCoordinate(1, new Point3f(0.77f, +0.77f, 0.77f));
-        plane.setCoordinate(2, new Point3f(0.77f, -0.77f, 0.77f));
-        plane.setCoordinate(3, new Point3f(0.77f, -0.77f, -0.77f));
-        plaszczyzna[2] = new Shape3D(plane, przezroczystosc);
-        plaszczyzna[2].setUserData("2");
+        planeCoords = new QuadArray (4, QuadArray.COORDINATES);
+        planeCoords.setCoordinate(0, new Point3f(0.77f, +0.77f, -0.77f));  
+        planeCoords.setCoordinate(1, new Point3f(0.77f, +0.77f, 0.77f));
+        planeCoords.setCoordinate(2, new Point3f(0.77f, -0.77f, 0.77f));
+        planeCoords.setCoordinate(3, new Point3f(0.77f, -0.77f, -0.77f));
+        plane[2] = new Shape3D(planeCoords, przezroczystosc);
+        plane[2].setUserData("face2");
         //3
-        plane = new QuadArray (4, QuadArray.COORDINATES);
-        plane.setCoordinate(0, new Point3f(+0.77f, -0.77f, -0.77f)); 
-        plane.setCoordinate(1, new Point3f(-0.77f, -0.77f, -0.77f));
-        plane.setCoordinate(2, new Point3f(-0.77f, 0.77f, -0.77f));
-        plane.setCoordinate(3, new Point3f(+0.77f, 0.77f, -0.77f));
-        plaszczyzna[3] = new Shape3D(plane, przezroczystosc);
-        plaszczyzna[3].setUserData("3");
+        planeCoords = new QuadArray (4, QuadArray.COORDINATES);
+        planeCoords.setCoordinate(0, new Point3f(+0.77f, -0.77f, -0.77f)); 
+        planeCoords.setCoordinate(1, new Point3f(-0.77f, -0.77f, -0.77f));
+        planeCoords.setCoordinate(2, new Point3f(-0.77f, 0.77f, -0.77f));
+        planeCoords.setCoordinate(3, new Point3f(+0.77f, 0.77f, -0.77f));
+        plane[3] = new Shape3D(planeCoords, przezroczystosc);
+        plane[3].setUserData("face3");
         //4
-        plane = new QuadArray (4, QuadArray.COORDINATES);
-        plane.setCoordinate(0, new Point3f(-0.77f, 0.77f, +0.77f)); 
-        plane.setCoordinate(1, new Point3f(0.77f, 0.77f, +0.77f));
-        plane.setCoordinate(2, new Point3f(0.77f, 0.77f, -0.77f));
-        plane.setCoordinate(3, new Point3f(-0.77f, 0.77f, -0.77f));
-        plaszczyzna[4] = new Shape3D(plane, przezroczystosc);
-        plaszczyzna[4].setUserData("4");
+        planeCoords = new QuadArray (4, QuadArray.COORDINATES);
+        planeCoords.setCoordinate(0, new Point3f(-0.77f, 0.77f, +0.77f)); 
+        planeCoords.setCoordinate(1, new Point3f(0.77f, 0.77f, +0.77f));
+        planeCoords.setCoordinate(2, new Point3f(0.77f, 0.77f, -0.77f));
+        planeCoords.setCoordinate(3, new Point3f(-0.77f, 0.77f, -0.77f));
+        plane[4] = new Shape3D(planeCoords, przezroczystosc);
+        plane[4].setUserData("face4");
         //5
-        plane = new QuadArray (4, QuadArray.COORDINATES);
-        plane.setCoordinate(0, new Point3f(-0.77f, -0.77f, -0.77f));
-        plane.setCoordinate(1, new Point3f(0.77f, -0.77f, -0.77f));
-        plane.setCoordinate(2, new Point3f(0.77f, -0.77f, +0.77f));
-        plane.setCoordinate(3, new Point3f(-0.77f, -0.77f, +0.77f));
-        plaszczyzna[5] = new Shape3D(plane, przezroczystosc);
-        plaszczyzna[5].setUserData("5"); 
+        planeCoords = new QuadArray (4, QuadArray.COORDINATES);
+        planeCoords.setCoordinate(0, new Point3f(-0.77f, -0.77f, -0.77f));
+        planeCoords.setCoordinate(1, new Point3f(0.77f, -0.77f, -0.77f));
+        planeCoords.setCoordinate(2, new Point3f(0.77f, -0.77f, +0.77f));
+        planeCoords.setCoordinate(3, new Point3f(-0.77f, -0.77f, +0.77f));
+        plane[5] = new Shape3D(planeCoords, przezroczystosc);
+        plane[5].setUserData("face5"); 
         
         for(int i = 0; i < 6; i++)
-            tg.addChild(plaszczyzna[i]);
+            tg.addChild(plane[i]);
     }
 }
