@@ -71,8 +71,8 @@ public class CubeButtons {
             minicubeAppearance[i].setTransparencyAttributes(ta);
         }
         
-        String[] pathes = {"obraski/reset.png", "obraski/random.png", 
-                           "obraski/play.png", "obraski/undo.png"};
+        String[] pathes = {"img/reset.png", "img/random.png", 
+                           "img/play.png", "img/undo.png"};
         for (int i=0; i<4; i++){
             loader = new TextureLoader(pathes[i], null);
             ImageComponent2D image = loader.getImage();

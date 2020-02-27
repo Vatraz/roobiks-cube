@@ -12,8 +12,9 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -28,48 +29,57 @@ import javax.vecmath.Vector3f;
 public final class Roobik extends MouseAdapter implements KeyListener{
     
     /** Gdy true, obroty odbywaja sie bez animacji */
-    static boolean noAnimation;
+    private boolean noAnimation;
     /** Przyjmuje wartosc true, jeżeli trwa układanie. 
      *  Zmiana wartosci na false rozpoczyna oddtwarzanie zapisanych ruchów */
-    static boolean saveActions;
+    private boolean saveActions;
     /** Jezeli true trwa animowane odtwarzanie zapamietanych ruchow */
-    static boolean playReplayOn;
+    private boolean playReplayOn;
     /** Wybrana sciana przy ktorej rozpoczelo sie odtwarzanie trasy. 
      *  Po jej odtworzeniu jest znowu wybierana */
     /** Lista kolejno wybranych przez uzytkownika ruchow */ 
-    static List<String> savedMovesList = new ArrayList<>();
+    private List<String> savedMovesList = new ArrayList<>();
     /** Lista kolejno wybranych przez uzytkownika scian */ 
-    static List<Integer> savedFacesList = new ArrayList<>();
+    private List<Integer> savedFacesList = new ArrayList<>();
     /** Lista kolejno wybranych w procesie losowania ruchow */ 
-    static List<String> randomMovesList = new ArrayList<>();
+    private List<String> randomMovesList = new ArrayList<>();
     /** Lista kolejno wybranych w procesie losowania scian */ 
-    static List<Integer> randomFacesList = new ArrayList<>(); 
+    private List<Integer> randomFacesList = new ArrayList<>(); 
     /** Wybrana sciana, dla ktorej interpretowane sa polecenia */
-    public static int activeFace;
+    private int activeFace;
         
     /** Licznik klatek animacji. Jezeli przyjmuje wartosc 0, timerAnimacja
      *  rozpoczyna swoje dzilanie, az do zwiekszenia wartosci parametru do 20. */
-    static int animationCounter;
+    private int animationCounter;
 
     /** Blokada przyjmowania polecen podczas animacji */
-    static boolean blockInput;            //BLOKADA PODCZAS ANIMACJI
+    private boolean blockInput;            //BLOKADA PODCZAS ANIMACJI
     /** Tablica elementow ktore podlegaja obrotowi */
-    static int[] elementsToRotateList = new int[8];
+    private int[] elementsToRotateList = new int[8];
     /** Srodkowy element sciany kostki */
-    static int middleElement;
+    private int middleElement;
     /** Kat o jaki maja obracac sie elementy */
-    static Transform3D rotation;
+    private final Transform3D rotation;
     
     /** Tablica poszczegolnych warstw kostki - kolejno 0-8, 9-16, 17-25 */ 
-    static int[] currentCubeLayout = new int[26];
+    private int[] currentCubeLayout = new int[26];
     
-    private Cube  rubiksCube;
+    private final Cube cube3D;
+    Map<String, Layer> ratatableLayers;
+    
     
     //CANVAS
-    static GraphicsConfiguration config;
-    static Canvas3D canvas3D;
     private final PickCanvas pickCanvas;  
-    private final Timer timer;  
+    
+    private class Layer{
+        public int middleElement;
+        public int[] elementsToRotate;
+        
+        public Layer(int middleElement, int[] elementsToRotate){
+            this.middleElement = middleElement;
+            this.elementsToRotate = elementsToRotate;
+        }
+    }
     
     /** 
      * Odtwarzanie zapisanych w listach ruchow, symulacja wcisniecia przycisku
@@ -164,11 +174,11 @@ public final class Roobik extends MouseAdapter implements KeyListener{
     private void rotateWithoutAnimation(){
         for ( int i = 0; i < 8; i++){                                                           
             int elementToRotate = currentCubeLayout[elementsToRotateList[i]];
-            rubiksCube.rotateElement(elementToRotate, rotation);
+            cube3D.rotateElement(elementToRotate, rotation);
         }
         if(middleElement != -1){
             int elementToRotate = currentCubeLayout[middleElement];
-            rubiksCube.rotateElement(elementToRotate, rotation);
+            cube3D.rotateElement(elementToRotate, rotation);
         } 
         blockInput = false;
     }
@@ -188,11 +198,11 @@ public final class Roobik extends MouseAdapter implements KeyListener{
             if(animationCounter < 20){
                 for ( int i = 0; i < 8; i++){                                                           
                     int numerElem = currentCubeLayout[elementsToRotateList[i]];
-                    rubiksCube.rotateElement(numerElem, rotation);
+                    cube3D.rotateElement(numerElem, rotation);
                 }
                 if(middleElement != -1){
                     int numerElem = currentCubeLayout[middleElement];
-                    rubiksCube.rotateElement(numerElem, rotation);
+                    cube3D.rotateElement(numerElem, rotation);
                 }
             animationCounter++;
             if(animationCounter == 20) blockInput = false;
@@ -279,14 +289,27 @@ public final class Roobik extends MouseAdapter implements KeyListener{
         executeElementsRotation();
     }
     
+    void cubeReset(){
+        cube3D.elementsReset();
+        for (int i=0; i<26; i++)
+            currentCubeLayout[i]=i;
+    }
     
     /** 
      * Konstruktor klasy Roobik 
      */
     public Roobik(){
+        System.setProperty("sun.awt.noerasebackground", "true");
+        activeFace = 1;
+        blockInput = false;
+        animationCounter = 20;
+        rotation = new Transform3D();
+        noAnimation = false;
+        saveActions = true;
+        playReplayOn = false;
         //CANVAS
-        config = SimpleUniverse.getPreferredConfiguration();
-        canvas3D = new Canvas3D(config);
+        GraphicsConfiguration config = SimpleUniverse.getPreferredConfiguration();
+        Canvas3D canvas3D = new Canvas3D(config);
         SimpleUniverse universe = new SimpleUniverse(canvas3D);
         Frame frame = new Frame("Kostka ogurat tego typu bec");       
         frame.setResizable(false);
@@ -294,19 +317,19 @@ public final class Roobik extends MouseAdapter implements KeyListener{
         canvas3D.addKeyListener(this);
         canvas3D.addMouseListener(this);
         
-        rubiksCube = new Cube();
+        cube3D = new Cube();
 
-        //GRAF SCENY I DOMYSLNY WIDOK
-        BranchGroup scene = rubiksCube.sceneGraph;
+        //SCENE GRAPH
+        BranchGroup scene = cube3D.sceneGraph;
         universe.addBranchGraph(scene);
         Transform3D observerTransform = new Transform3D();
         observerTransform.set(new Vector3f(0.0f, 0.0f, 4.7f));
         universe.getViewingPlatform().getViewPlatformTransform().setTransform(observerTransform);
         
         //TIMER
-        timer = new Timer();
+        Timer timer = new Timer();
         timer.scheduleAtFixedRate(timerAnimation, 0, 15);
-        timer.scheduleAtFixedRate(timerReplay, 0, 300);
+        timer.scheduleAtFixedRate(timerReplay, 0, 400);
         
         //MOUSE CLICK DETECTION
         pickCanvas = new PickCanvas(canvas3D, scene);
@@ -318,44 +341,59 @@ public final class Roobik extends MouseAdapter implements KeyListener{
         frame.add(canvas3D);
         frame.pack();
         frame.show();
+        
+        ratatableLayers = createRotatablelayers();
+        
+        for(int i=0; i<26; i++)
+            currentCubeLayout[i] = i;
     }
     
     public static void main(String[] args) {
-        System.setProperty("sun.awt.noerasebackground", "true");
-        activeFace = 1;
-        blockInput = false;
-        animationCounter = 20;
-        rotation = new Transform3D();
-        noAnimation = false;
-        saveActions = true;
-        playReplayOn = false;
-        new Roobik();
+        Roobik roobik = new Roobik();
     }
     
-    /** Losowanie kolejnych obrotow, i wpisanie ich na liste */
-    static void randomLayout(){
+    /** 
+     * Creates arrays of randomly chosen faces and moves.
+     * Updates {@link Roobik#randomMovesList } and {@link Roobik#randomFacesList } 
+     */
+    void createRandomActionsList(){
         Random generator = new Random();
+        int[] availableFaces = {0, 1, 2, 3, 4, 5, 6};
+        String[] availableMoves = {"up0", "up1", "up2", "right0", "right1", 
+            "right2", "down0", "down1", "down2", "left0", "left1", "left2"};
         for(int i = 0; i < 123; i++){
             int face = generator.nextInt(6);
             int move = generator.nextInt(12);
-            List<Integer> availableFaces = Arrays.asList(
-                    0, 1, 2, 3, 4, 5, 6);
-            List<String> availableMoves = Arrays.asList(
-                    "up0", "up1", "up2", "right0", "right1", "right2", 
-                    "down0", "down1", "down2", "left0", "left1", "left2");
-            randomMovesList.add(availableMoves.get(move));
-            randomFacesList.add(availableFaces.get(face));      
+            randomMovesList.add(availableMoves[move]);
+            randomFacesList.add(availableFaces[face]);      
         }
+    }
+    
+    
+    private HashMap createRotatablelayers(){
+        HashMap map = new HashMap<String, Layer>();
+        map.put("ZXtop", new Layer(10, new int[] {0, 1, 2, 11, 19, 18, 17, 9}));
+        map.put("ZXmid", new Layer(-1, new int[] {3, 4, 5, 13, 22, 21, 20, 12}));
+        map.put("ZXbot", new Layer(15, new int[] {6, 7, 8, 16, 25, 24, 23, 14}));
+        map.put("ZYtop", new Layer(12, new int[] {0, 3, 6, 14, 23, 20, 17, 9}));
+        map.put("ZYmid", new Layer(-1, new int[] {1, 4, 7, 15, 24, 21, 18, 10}));
+        map.put("ZYbot", new Layer(13, new int[] {2, 5, 8, 16, 25, 22, 19, 11}));
+        map.put("XYtop", new Layer(4, new int[] {0, 3, 6, 7, 8, 5, 2, 1}));
+        map.put("XYmid", new Layer(-1, new int[] {9, 12, 14, 15, 16, 13, 11, 10}));
+        map.put("XYbot", new Layer(21, new int[] {17, 20, 23, 24, 25, 22, 19, 18}));        
+        return map;
     }
     
     /** 
      * Tworzenie tablicy obracanych elementow 
      */
-    private void createElementsToRotateList(int zero, int uno, int due, int tre, int quattro, int cinque, int sei, int sette){
-            elementsToRotateList[0]=zero;               elementsToRotateList[1]=uno;
-            elementsToRotateList[2]=due;                elementsToRotateList[3]=tre; 
-            elementsToRotateList[4]=quattro;            elementsToRotateList[5]=cinque;
-            elementsToRotateList[6]=sei;                elementsToRotateList[7]=sette;
+    private void createElementsToRotateList(
+                int zero, int uno, int due, int tre,
+                int quattro, int cinque, int sei, int sette){
+            elementsToRotateList[0]=zero;          elementsToRotateList[1]=uno;
+            elementsToRotateList[2]=due;           elementsToRotateList[3]=tre; 
+            elementsToRotateList[4]=quattro;       elementsToRotateList[5]=cinque;
+            elementsToRotateList[6]=sei;           elementsToRotateList[7]=sette;
     }
        
     @Override
@@ -383,19 +421,19 @@ public final class Roobik extends MouseAdapter implements KeyListener{
                 savedFacesList.clear();
                 randomMovesList.clear();
                 randomFacesList.clear();
-                rubiksCube.cubeReset(); 
+                cubeReset(); 
                 break;   
             case "random":  //tasowanie kostki                          
                 savedMovesList.clear();
                 savedFacesList.clear();
                 randomMovesList.clear();
                 randomFacesList.clear();
-                rubiksCube.cubeReset();
-                randomLayout();
+                cubeReset();
+                createRandomActionsList();
                 followRandomActions(activeFace);
                 break;   
             case "play":  //odtwarzanie              
-                rubiksCube.cubeReset();
+                cubeReset();
                 followRandomActions(activeFace);
                 playReplayOn = true;
                 break; 
@@ -635,32 +673,32 @@ public final class Roobik extends MouseAdapter implements KeyListener{
             case "face0":
                 activeFace = 0;
                 rotation.rotY(-Math.PI/2);
-                rubiksCube.rotateArrows(rotation);
+                cube3D.rotateArrows(rotation);
                 break;                  
             case "face1":
                 activeFace = 1;
                 rotation.rotY(0);
-                rubiksCube.rotateArrows(rotation);
+                cube3D.rotateArrows(rotation);
                 break;  
             case "face2":
                 activeFace = 2;
                 rotation.rotY(Math.PI/2);
-                rubiksCube.rotateArrows(rotation);
+                cube3D.rotateArrows(rotation);
                 break;   
             case "face3":
                 activeFace = 3;
                 rotation.rotY(Math.PI);
-                rubiksCube.rotateArrows(rotation);
+                cube3D.rotateArrows(rotation);
                 break;   
             case "face4":
                 activeFace = 4;
                 rotation.rotX(-Math.PI/2);
-                rubiksCube.rotateArrows(rotation);
+                cube3D.rotateArrows(rotation);
                 break;   
             case "face5":                
                 activeFace = 5;
                 rotation.rotX(Math.PI/2);
-                rubiksCube.rotateArrows(rotation);
+                cube3D.rotateArrows(rotation);
                 break;   
             default:
                 break;
@@ -692,7 +730,7 @@ public final class Roobik extends MouseAdapter implements KeyListener{
             case '3': executeCommand("face3"); break;
             case '4': executeCommand("face4"); break;
             case '5': executeCommand("face5"); break;
-            case 'g': executeCommand("undo"); break;
+            case 'b': executeCommand("undo"); break;
             default: break;
             } 
     }

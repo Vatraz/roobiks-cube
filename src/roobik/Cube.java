@@ -12,7 +12,6 @@ import javax.media.j3d.TransformGroup;
 import javax.vecmath.Color3f;
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3f;
-import static roobik.Roobik.currentCubeLayout;
 
 /**
  * Klasa obslugujaca inicjalizacje elementow kostki, a takze losowanie jej ukladu
@@ -20,27 +19,24 @@ import static roobik.Roobik.currentCubeLayout;
  * @author PotezneSzwagry
  */
 public class Cube { 
-   public BranchGroup sceneGraph;
-   private CubeArrows cubeArrows;
-   public TransformGroup tgArrows;
-   private CubeCube cube;
+    public BranchGroup sceneGraph;
+    private CubeArrows cubeArrows;
+    public TransformGroup tgArrows;
+    final private CubeCube cube;
 
-   void rotateElement(int id, Transform3D rotation){
+    void rotateElement(int id, Transform3D rotation){
        cube.elemList[id].mulTransform(rotation);
    }
        
     /** 
      * Przywrocenie ukladu kostki do jego stanu poczatkowego 
      */
-    void cubeReset(){
-        for (int i=0; i<26; i++){
-            cube.elemList[i].reset(); 
-            currentCubeLayout[i]=i; 
-        }
+    void elementsReset(){
+        cube.transformsReset();
     }
       
     void rotateArrows(Transform3D rotation){
-        cubeArrows.tg.setTransform(rotation);
+        cubeArrows.setTransform(rotation);
     }     
     
     private void addElemsSceneGraph(TransformGroup tgCube, BoundingSphere bound) {
@@ -76,7 +72,7 @@ public class Cube {
         BranchGroup grafS = new BranchGroup();
 
         //TEKSTURA
-        TextureLoader bgTexture = new TextureLoader("obraski/paweljumper.jpg", null);
+        TextureLoader bgTexture = new TextureLoader("img/background.jpg", null);
 	Background bg = new Background(bgTexture.getImage());
 	bg.setApplicationBounds(bound);
 	grafS.addChild(bg);

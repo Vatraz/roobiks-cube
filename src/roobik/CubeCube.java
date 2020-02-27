@@ -11,7 +11,6 @@ import javax.media.j3d.Material;
 import javax.media.j3d.TransformGroup;
 import javax.vecmath.Color3f;
 import javax.vecmath.Vector3f;
-import static roobik.Roobik.currentCubeLayout;
 
 /**
  *
@@ -68,10 +67,10 @@ public class CubeCube {
         
         Material whiteMaterial = new Material(wh, bc ,wh,bc, 40.0f);
         white.setColoringAttributes(cattr);
-        white.setMaterial(whiteMaterial);
-     
+        white.setMaterial(whiteMaterial);     
           
-        elemList = new CubeElement[26]; 
+        elemList = new CubeElement[26];
+        
         //LAYER 1                                                               FRONT | TOP | BOTTOM | RIGHT | LEFT | BACK
         elemList[0] = new CubeElement(0,  new Vector3f(-0.51f,+0.51f,+0.51f),   red, white, black, black, green, black);      
         elemList[1] = new CubeElement(1,  new Vector3f(0.0f,+0.51f,+0.51f),     red, white, black, black, black, black);        
@@ -102,12 +101,14 @@ public class CubeCube {
         elemList[24] = new CubeElement(24, new Vector3f(0.0f,-0.51f,-0.51f),    black, black, yellow,  black,  black, orange);
         elemList[25] = new CubeElement(25, new Vector3f(+0.51f,-0.51f,-0.51f),  black, black, yellow,  blue, black, orange);
         
-        for (int i=0; i < 26; i++){
+        for (int i=0; i < 26; i++)
             parent.addChild(elemList[i].tg);
-            currentCubeLayout[i] = i;
-        }
     }
     
+    public void transformsReset(){
+        for (int i=0; i<26; i++)
+            elemList[i].reset();  
+    }
     
     public CubeCube(){
         tg = new TransformGroup();

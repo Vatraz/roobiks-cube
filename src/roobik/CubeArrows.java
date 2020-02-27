@@ -9,6 +9,7 @@ import javax.media.j3d.Appearance;
 import javax.media.j3d.ColoringAttributes;
 import static javax.media.j3d.ColoringAttributes.NICEST;
 import javax.media.j3d.Shape3D;
+import javax.media.j3d.Transform3D;
 import javax.media.j3d.TransformGroup;
 import javax.media.j3d.TransparencyAttributes;
 import static javax.media.j3d.TransparencyAttributes.BLENDED;
@@ -22,6 +23,10 @@ import javax.vecmath.Point3f;
  */
 public class CubeArrows {
     public TransformGroup tg;
+    
+    public void setTransform(Transform3D rotation){
+        tg.setTransform(rotation);
+    }
     
     private Appearance getAppearance(){
         Appearance appearance = new Appearance();
@@ -91,7 +96,5 @@ public class CubeArrows {
         
         for(int i = 0; i < 12; i++)
             tg.addChild(arrow[i]);
-    
-    
     }
 }
