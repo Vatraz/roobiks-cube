@@ -12,6 +12,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,19 +55,17 @@ public final class Roobik extends MouseAdapter implements KeyListener{
 
     /** Blokada przyjmowania polecen podczas animacji */
     private boolean blockInput;            //BLOKADA PODCZAS ANIMACJI
-    /** Tablica elementow ktore podlegaja obrotowi */
-    private int[] elementsToRotateList = new int[8];
     /** Srodkowy element sciany kostki */
-    private int middleElement;
     /** Kat o jaki maja obracac sie elementy */
     private final Transform3D rotation;
-    
+        
     /** Tablica poszczegolnych warstw kostki - kolejno 0-8, 9-16, 17-25 */ 
     private int[] currentCubeLayout = new int[26];
     
     private final Cube cube3D;
-    Map<String, Layer> ratatableLayers;
+    Map<String, Layer> rotatableLayers;
     
+    private Layer activeLayer;
     
     //CANVAS
     private final PickCanvas pickCanvas;  
@@ -173,11 +172,11 @@ public final class Roobik extends MouseAdapter implements KeyListener{
      */
     private void rotateWithoutAnimation(){
         for ( int i = 0; i < 8; i++){                                                           
-            int elementToRotate = currentCubeLayout[elementsToRotateList[i]];
+            int elementToRotate = currentCubeLayout[activeLayer.elementsToRotate[i]];
             cube3D.rotateElement(elementToRotate, rotation);
         }
-        if(middleElement != -1){
-            int elementToRotate = currentCubeLayout[middleElement];
+        if(activeLayer.middleElement != -1){
+            int elementToRotate = currentCubeLayout[activeLayer.middleElement];
             cube3D.rotateElement(elementToRotate, rotation);
         } 
         blockInput = false;
@@ -197,11 +196,11 @@ public final class Roobik extends MouseAdapter implements KeyListener{
         public void run() {            
             if(animationCounter < 20){
                 for ( int i = 0; i < 8; i++){                                                           
-                    int numerElem = currentCubeLayout[elementsToRotateList[i]];
+                    int numerElem = currentCubeLayout[activeLayer.elementsToRotate[i]];
                     cube3D.rotateElement(numerElem, rotation);
                 }
-                if(middleElement != -1){
-                    int numerElem = currentCubeLayout[middleElement];
+                if(activeLayer.middleElement != -1){
+                    int numerElem = currentCubeLayout[activeLayer.middleElement];
                     cube3D.rotateElement(numerElem, rotation);
                 }
             animationCounter++;
@@ -214,7 +213,9 @@ public final class Roobik extends MouseAdapter implements KeyListener{
      * Aktualizacja ukladu kostki na ten po wykonaniu zadanego ruchu, i nastepnie wykonanie obrotu.
      * W zaleznosci od wartosci {@link #noAnimation} realizuje go z animacja lub bez.
      */
-    private void executeElementsRotation(){
+    private void executeElementsRotation(boolean inverted){
+        System.out.println(activeFace);
+ 
         //ZMIANA ULOZENIA KOSTKI
         blockInput = true;
         int elementNumber;
@@ -222,16 +223,28 @@ public final class Roobik extends MouseAdapter implements KeyListener{
         int prevElementNumber = -1;
         int prevElementNumberPlus = -1;
         
-        int firstElementNumber = elementsToRotateList[0];
-        int firstElementNumberPlus = elementsToRotateList[1];
+        int[] elementsToRotateArr = activeLayer.elementsToRotate.clone();
+        if (inverted){
+            int n = elementsToRotateArr.length;
+            for (int i = 0; i < n / 2; i++) { 
+                int buf = elementsToRotateArr[i]; 
+                elementsToRotateArr[i] = elementsToRotateArr[n - i - 1]; 
+                elementsToRotateArr[n - i - 1] = buf; 
+            } 
+        }
+        System.out.println(str(elementsToRotateArr));
+
+        
+        int firstElementNumber = elementsToRotateArr[0];
+        int firstElementNumberPlus = elementsToRotateArr[1];
         
         //ZMIANA UKLADU KOSTKI W TABLICY
         for ( int i = 0; i < 7; i=i+2){                            
-                elementNumber = currentCubeLayout[elementsToRotateList[i]];
-                elementNumberPlus = currentCubeLayout[elementsToRotateList[i+1]];      
-                currentCubeLayout[elementsToRotateList[i]] = prevElementNumber;
+                elementNumber = currentCubeLayout[elementsToRotateArr[i]];
+                elementNumberPlus = currentCubeLayout[elementsToRotateArr[i+1]];      
+                currentCubeLayout[elementsToRotateArr[i]] = prevElementNumber;
                 prevElementNumber = elementNumber;
-                currentCubeLayout[elementsToRotateList[i+1]] = prevElementNumberPlus;
+                currentCubeLayout[elementsToRotateArr[i+1]] = prevElementNumberPlus;
                 prevElementNumberPlus = elementNumberPlus;
         }
         currentCubeLayout[firstElementNumber] = prevElementNumber;
@@ -248,45 +261,62 @@ public final class Roobik extends MouseAdapter implements KeyListener{
      * Wybor kierunku obrotu - poziomo - oraz ustawienie skoku animacji, {@link #rotation},
      * w zaleznosci od wartosci {@link #noAnimation}.
      */
-    private void rotationPitch(boolean positive){
-        if(positive == true){
+    private void rotationPitch(boolean inverted){
+        String a;
+        if (inverted) a = "-"; else a = "+";
+        System.err.println("PITCH" + a);
+        if(inverted == false){
             if(!noAnimation)rotation.rotY(Math.PI/40);
             else rotation.rotY(Math.PI/2);
         }else{
             if(!noAnimation)rotation.rotY(-Math.PI/40); 
             else rotation.rotY(-Math.PI/2);
         }        
-        executeElementsRotation();
+        executeElementsRotation(inverted);
     }
     
     /** 
      * Wybor kierunku obrotu - pionowo - oraz ustawienie skoku animacji, {@link #rotation},
      * w zaleznosci od wartosci {@link #noAnimation}.
      */
-    private void rotationRoll (boolean positive){
-        if(positive == true){
+    private void rotationRoll (boolean inverted){
+        String a;
+        if (inverted) a = "-"; else a = "+";
+        System.err.println("ROLL" + a);
+        if(inverted == false){
             if(!noAnimation)rotation.rotX(Math.PI/40);
             else rotation.rotX(Math.PI/2);
         }else{
             if(!noAnimation)rotation.rotX(-Math.PI/40); 
             else rotation.rotX(-Math.PI/2);
         }               
-        executeElementsRotation();
+        executeElementsRotation(inverted);
     }
+    
+    private String str(int[] list){ 
+        String a = "";
+        for(int i =0; i<list.length; i++){
+            a = a + Integer.toString(list[i]) + ", ";
+        }
+        return a;
+    };
     
     /** 
      * Wybor kierunku obrotu - w poprzek - oraz ustawienie skoku animacji, {@link #rotation},
      * w zaleznosci od wartosci {@link #noAnimation}.
      */
-    private void rotationYaw( boolean positive){
-        if(positive == true){
+    private void rotationYaw( boolean inverted){
+        String a;
+        if (inverted) a = "-"; else a = "+";
+        System.err.println("YAW" + a);
+        if(inverted == false){
+            if(!noAnimation)rotation.rotZ(Math.PI/40);
+            else rotation.rotZ(Math.PI/2);
+        }else{
             if(!noAnimation)rotation.rotZ(-Math.PI/40);
             else rotation.rotZ(-Math.PI/2);
-        }else{
-            if(!noAnimation)rotation.rotZ(+Math.PI/40);
-            else rotation.rotZ(Math.PI/2);
         }     
-        executeElementsRotation();
+        executeElementsRotation(inverted);
     }
     
     void cubeReset(){
@@ -342,7 +372,7 @@ public final class Roobik extends MouseAdapter implements KeyListener{
         frame.pack();
         frame.show();
         
-        ratatableLayers = createRotatablelayers();
+        rotatableLayers = createRotatablelayers();
         
         for(int i=0; i<26; i++)
             currentCubeLayout[i] = i;
@@ -375,27 +405,17 @@ public final class Roobik extends MouseAdapter implements KeyListener{
         map.put("ZXtop", new Layer(10, new int[] {0, 1, 2, 11, 19, 18, 17, 9}));
         map.put("ZXmid", new Layer(-1, new int[] {3, 4, 5, 13, 22, 21, 20, 12}));
         map.put("ZXbot", new Layer(15, new int[] {6, 7, 8, 16, 25, 24, 23, 14}));
-        map.put("ZYtop", new Layer(12, new int[] {0, 3, 6, 14, 23, 20, 17, 9}));
-        map.put("ZYmid", new Layer(-1, new int[] {1, 4, 7, 15, 24, 21, 18, 10}));
-        map.put("ZYbot", new Layer(13, new int[] {2, 5, 8, 16, 25, 22, 19, 11}));
+        
+        map.put("YZbot", new Layer(12, new int[] {0, 3, 6, 14, 23, 20, 17, 9}));
+        map.put("YZmid", new Layer(-1, new int[] {1, 4, 7, 15, 24, 21, 18, 10}));
+        map.put("YZtop", new Layer(13, new int[] {2, 5, 8, 16, 25, 22, 19, 11}));
+        
         map.put("XYtop", new Layer(4, new int[] {0, 3, 6, 7, 8, 5, 2, 1}));
         map.put("XYmid", new Layer(-1, new int[] {9, 12, 14, 15, 16, 13, 11, 10}));
         map.put("XYbot", new Layer(21, new int[] {17, 20, 23, 24, 25, 22, 19, 18}));        
         return map;
     }
     
-    /** 
-     * Tworzenie tablicy obracanych elementow 
-     */
-    private void createElementsToRotateList(
-                int zero, int uno, int due, int tre,
-                int quattro, int cinque, int sei, int sette){
-            elementsToRotateList[0]=zero;          elementsToRotateList[1]=uno;
-            elementsToRotateList[2]=due;           elementsToRotateList[3]=tre; 
-            elementsToRotateList[4]=quattro;       elementsToRotateList[5]=cinque;
-            elementsToRotateList[6]=sei;           elementsToRotateList[7]=sette;
-    }
-       
     @Override
     public void mouseClicked(MouseEvent e){
         pickCanvas.setShapeLocation(e);
@@ -440,236 +460,166 @@ public final class Roobik extends MouseAdapter implements KeyListener{
             case "right0":
                 if (saveActions) addMoveToSavedList("right0");
                 if(activeFace >=0 && activeFace <=3){
-                    middleElement = 10;
-                    createElementsToRotateList(0, 1, 2, 11, 19, 18, 17, 9);
-                    rotationPitch(true);
-                }else
-                    if(activeFace == 4){
-                        middleElement = 21;
-                        createElementsToRotateList(17, 18, 19, 22, 25, 24, 23, 20);
-                        rotationYaw(true);
-                    }else
-                        if(activeFace == 5){
-                            middleElement = 4;
-                            createElementsToRotateList(0, 3, 6, 7, 8, 5, 2, 1);
-                            rotationYaw(false);
-                        }   break;
+                    activeLayer = rotatableLayers.get("ZXtop");
+                    rotationPitch(false);
+                }else if(activeFace == 4){
+                    activeLayer = rotatableLayers.get("XYbot");
+                    rotationYaw(true);
+                }else if(activeFace == 5){
+                    activeLayer = rotatableLayers.get("XYtop");
+                    rotationYaw(false);
+                } break;
             case "right1":
                 if (saveActions) addMoveToSavedList("right1");
                 if(activeFace >=0 && activeFace <=3){
-                    middleElement = -1;
-                    createElementsToRotateList(3, 4, 5, 13, 22, 21, 20, 12);
-                    rotationPitch(true);
-                }else
-                    if(activeFace == 4){
-                        middleElement = -1;
-                        createElementsToRotateList(9, 10, 11, 13, 16, 15, 14, 12);
-                        rotationYaw(true);
-                    }else
-                        if(activeFace == 5){
-                            middleElement = -1;
-                            createElementsToRotateList(9, 12, 14, 15, 16, 13, 11, 10);
-                            rotationYaw(false);
-                        }   break;
+                    activeLayer = rotatableLayers.get("ZXmid");
+                    rotationPitch(false);
+                }else if(activeFace == 4){
+                    activeLayer = rotatableLayers.get("XYmid");
+                    rotationYaw(true); 
+                }else if(activeFace == 5){
+                    activeLayer = rotatableLayers.get("XYmid");
+                    rotationYaw(false);
+                } break;
             case "right2":
                 if (saveActions) addMoveToSavedList("right2");
                 if(activeFace >=0 && activeFace <=3){
-                    middleElement = 15;
-                    createElementsToRotateList(6, 7, 8, 16, 25, 24, 23, 14);
-                    rotationPitch(true);
-                }else
-                    if(activeFace == 4){
-                        middleElement = 4;
-                        createElementsToRotateList(0, 1, 2, 5, 8, 7, 6, 3);
-                        rotationYaw(true);
-                    }else
-                        if(activeFace == 5){
-                            middleElement = 21;
-                            createElementsToRotateList(17, 20, 23, 24, 25, 22, 19, 18);
-                            rotationYaw(false);
-                        }   break;
+                    activeLayer = rotatableLayers.get("ZXbot");
+                    rotationPitch(false);
+                }else if(activeFace == 4){
+                    activeLayer = rotatableLayers.get("XYtop");
+                    rotationYaw(true);
+                }else if(activeFace == 5){
+                    activeLayer = rotatableLayers.get("XYbot");
+                    rotationYaw(false);
+                } break;
             case "left0":
                 if (saveActions) addMoveToSavedList("left0");
                 if(activeFace >=0 && activeFace <=3){
-                    middleElement = 10;
-                    createElementsToRotateList(9, 17, 18, 19, 11, 2, 1, 0);
-                    rotationPitch(false);
-                }else
-                    if(activeFace == 4){
-                        middleElement = 21;
-                        createElementsToRotateList(17, 20, 23, 24, 25, 22, 19, 18);
-                        rotationYaw(false);
-                    }else
-                        if(activeFace == 5){
-                            middleElement = 4;
-                            createElementsToRotateList(0, 1, 2, 5, 8, 7, 6, 3);
-                            rotationYaw(true);
-                        }   break;
+                    activeLayer = rotatableLayers.get("ZXtop");
+                    rotationPitch(true);
+                }else if(activeFace == 4){
+                    activeLayer = rotatableLayers.get("XYbot");
+                    rotationYaw(false);
+                }else if(activeFace == 5){
+                    activeLayer = rotatableLayers.get("XYtop");
+                    rotationYaw(true);
+                } break;
             case "left1":
                 if (saveActions) addMoveToSavedList("left1");
                 if(activeFace >=0 && activeFace <=3){
-                    middleElement = -1;
-                    createElementsToRotateList(12, 20, 21, 22, 13, 5, 4, 3);
-                    rotationPitch(false);
-                }else
-                    if(activeFace == 4){
-                        middleElement = -1;
-                        createElementsToRotateList(9, 12, 14, 15, 16, 13, 11, 10);
-                        rotationYaw(false);
-                    }else
-                        if(activeFace == 5){
-                            middleElement = -1;
-                            createElementsToRotateList(9, 10, 11, 13, 16, 15, 14, 12);
-                            rotationYaw(true);
-                        }   break;
+                    activeLayer = rotatableLayers.get("ZXmid");
+                    rotationPitch(true);
+                }else if(activeFace == 4){
+                    activeLayer = rotatableLayers.get("XYmid");
+                    rotationYaw(false); 
+                }else if(activeFace == 5){
+                    activeLayer = rotatableLayers.get("XYmid");
+                    rotationYaw(true);
+                } break;
             case "left2":                
                 if (saveActions) addMoveToSavedList("left2");
                 if(activeFace >=0 && activeFace <=3){
-                    middleElement = 15;
-                    createElementsToRotateList(14, 23, 24, 25, 16, 8, 7, 6);
-                    rotationPitch(false);
-                }else
-                    if(activeFace == 4){
-                        middleElement = 4;
-                        createElementsToRotateList(0, 3, 6, 7, 8, 5, 2, 1);
-                        rotationYaw(false);
-                    }else
-                        if(activeFace == 5){
-                            middleElement = 21;
-                            createElementsToRotateList(17, 18, 19, 22, 25, 24, 23, 20);
-                            rotationYaw(true);
-                        }   break;
+                    activeLayer = rotatableLayers.get("ZXbot");
+                    rotationPitch(true);
+                }else if(activeFace == 4){
+                    activeLayer = rotatableLayers.get("XYtop");
+                    rotationYaw(false);
+                }else if(activeFace == 5){
+                    activeLayer = rotatableLayers.get("XYbot");
+                    rotationYaw(true);
+                } break;
             case "down0":
                 if (saveActions) addMoveToSavedList("down0");
                 if(activeFace == 1 || activeFace == 4 || activeFace == 5){
-                    middleElement = 12;
-                    createElementsToRotateList(0, 3, 6, 14, 23, 20, 17, 9);
+                    activeLayer = rotatableLayers.get("YZbot");
+                    rotationRoll(false);
+                }else if(activeFace == 3){
+                    activeLayer = rotatableLayers.get("YZtop");
                     rotationRoll(true);
-                }else
-                    if(activeFace == 3){
-                        middleElement = 13;
-                        createElementsToRotateList(2, 11, 19, 22, 25, 16, 8 , 5);
-                        rotationRoll(false);
-                    }else
-                        if(activeFace == 2){
-                            middleElement = 4;
-                            createElementsToRotateList(0, 1, 2, 5, 8, 7, 6, 3);
-                            rotationYaw(true);
-                        }else
-                            if(activeFace == 0){
-                                middleElement = 21;
-                                createElementsToRotateList(17, 20, 23, 24, 25, 22, 19, 18);
-                                rotationYaw(false);
-                            }   break;
+                }else if(activeFace == 2){
+                    activeLayer = rotatableLayers.get("XYtop");
+                    rotationYaw(true);
+                }else if(activeFace == 0){
+                    activeLayer = rotatableLayers.get("XYbot");
+                    rotationYaw(false);
+                }break;
             case "down1":
                 if (saveActions) addMoveToSavedList("down1");
                 if(activeFace == 1 || activeFace == 4 || activeFace == 5){
-                    middleElement = -1;
-                    createElementsToRotateList(1, 4, 7, 15, 24, 21, 18, 10);
+                    activeLayer = rotatableLayers.get("YZmid");
+                    rotationRoll(false);
+                }else if(activeFace == 3){
+                    activeLayer = rotatableLayers.get("YZmid");
                     rotationRoll(true);
-                }else
-                    if(activeFace == 3){
-                        middleElement = -1;
-                        createElementsToRotateList(1, 10, 18, 21, 24, 15, 7, 4);
-                        rotationRoll(false);
-                    }else
-                        if(activeFace == 2){
-                            middleElement = -1;
-                            createElementsToRotateList(9, 10, 11, 13, 16, 15, 14, 12);
-                            rotationYaw(true);
-                        }else
-                            if(activeFace == 0){
-                                middleElement = -1;
-                                createElementsToRotateList(9, 12, 14, 15, 16, 13, 11, 10);
-                                rotationYaw(false);
-                            }   break;
+                }else if(activeFace == 2){
+                    activeLayer = rotatableLayers.get("XYmid");
+                    rotationYaw(true);
+                }else if(activeFace == 0){
+                    activeLayer = rotatableLayers.get("XYmid");
+                    rotationYaw(false);
+                }break;
             case "down2":
                 if (saveActions) addMoveToSavedList("down2");
                 if(activeFace == 1 || activeFace == 4 || activeFace == 5){
-                    middleElement = 13;
-                    createElementsToRotateList(2, 5, 8, 16, 25, 22, 19, 11);
+                    activeLayer = rotatableLayers.get("YZtop");
+                    rotationRoll(false);
+                }else if(activeFace == 3){
+                    activeLayer = rotatableLayers.get("YZbot");
                     rotationRoll(true);
-                }else
-                    if(activeFace == 3){
-                        middleElement = 12;
-                        createElementsToRotateList(0, 9, 17, 20, 23, 14, 6, 3);
-                        rotationRoll(false);
-                    }else
-                        if(activeFace == 2){
-                            middleElement = 21;
-                            createElementsToRotateList(17, 18, 19, 22, 25, 24, 23, 20);
-                            rotationYaw(true);
-                        }else
-                            if(activeFace == 0){
-                                middleElement = 4;
-                                createElementsToRotateList(0, 3, 6, 7, 8, 5, 2, 1);
-                                rotationYaw(false);
-                            }   break;
+                }else if(activeFace == 2){
+                    activeLayer = rotatableLayers.get("XYbot");
+                    rotationYaw(true);
+                }else if(activeFace == 0){
+                    activeLayer = rotatableLayers.get("XYtop");
+                    rotationYaw(false);
+                }break;
             case "up0":
                 if (saveActions) addMoveToSavedList("up0");
                 if(activeFace == 1 || activeFace == 4 || activeFace == 5){
-                    middleElement = 12;
-                    createElementsToRotateList(9, 17, 20, 23, 14, 6, 3, 0);
-                    rotationRoll(false);                }else
-                    if(activeFace == 3){
-                        middleElement = 13;
-                        createElementsToRotateList(2, 5, 8, 16, 25, 22, 19, 11);
-                        rotationRoll(true);
-                   }else
-                        if(activeFace == 2){
-                            middleElement = 4;
-                            createElementsToRotateList(0, 3, 6, 7, 8, 5, 2, 1);
-                            rotationYaw(false);
-                        }else
-                            if(activeFace == 0){
-                                middleElement = 21;
-                                createElementsToRotateList(17, 18, 19, 22, 25, 24, 23, 20);
-                                rotationYaw(true);
-                            }   break;
+                    activeLayer = rotatableLayers.get("YZbot");
+                    rotationRoll(true);
+                }else if(activeFace == 3){
+                    activeLayer = rotatableLayers.get("YZtop");
+                    rotationRoll(false);
+                }else if(activeFace == 2){
+                    activeLayer = rotatableLayers.get("XYtop");
+                    rotationYaw(false);
+                }else if(activeFace == 0){
+                    activeLayer = rotatableLayers.get("XYbot");
+                    rotationYaw(true);
+                }break;
             case "up1":
                 if (saveActions) addMoveToSavedList("up1");
                 if(activeFace == 1 || activeFace == 4 || activeFace == 5){
-                    middleElement = -1;
-                    createElementsToRotateList(1, 10, 18, 21, 24, 15, 7, 4);
+                    activeLayer = rotatableLayers.get("YZmid");
+                    rotationRoll(true);
+                }else if(activeFace == 3){
+                    activeLayer = rotatableLayers.get("YZmid");
                     rotationRoll(false);
-               }else
-                    if(activeFace == 3){
-                        middleElement = -1;
-                        createElementsToRotateList(1, 4, 7, 15, 24 ,21, 18, 10);
-                        rotationRoll(true);
-                   }else
-                        if(activeFace == 2){
-                            middleElement = -1;
-                            createElementsToRotateList(9, 12, 14, 15, 16, 13, 11, 10);
-                            rotationYaw(false);
-                        }else
-                            if(activeFace == 0){
-                                middleElement = -1;
-                                createElementsToRotateList(9, 10, 11, 13, 16, 15, 14, 12);
-                                rotationYaw(true);
-                            }   break;
+                }else if(activeFace == 2){
+                    activeLayer = rotatableLayers.get("XYmid");
+                    rotationYaw(false);
+                }else if(activeFace == 0){
+                    activeLayer = rotatableLayers.get("XYmid");
+                    rotationYaw(true);
+                }break;
             case "up2":
                 if (saveActions) addMoveToSavedList("up2");
+                if (saveActions) addMoveToSavedList("down2");
                 if(activeFace == 1 || activeFace == 4 || activeFace == 5){
-                    middleElement = 13;
-                    createElementsToRotateList(2, 11, 19, 22, 25, 16, 8, 5);
+                    activeLayer = rotatableLayers.get("YZtop");
+                    rotationRoll(true);
+                }else if(activeFace == 3){
+                    activeLayer = rotatableLayers.get("YZbot");
                     rotationRoll(false);
-               }else
-                    if(activeFace == 3){
-                        middleElement = 12;
-                        createElementsToRotateList(0, 3, 6, 14, 23, 20, 17, 9 );
-                        rotationRoll(true);
-                   }else
-                        if(activeFace == 2){
-                            middleElement = 21;
-                            createElementsToRotateList(17, 20, 23, 24, 25, 22, 19, 18);
-                            rotationYaw(false);
-                        }else
-                            if(activeFace == 0){
-                                middleElement = 4;
-                                createElementsToRotateList(0, 1, 2, 5, 8, 7, 6, 3);
-                                rotationYaw(true);
-                            }   break;
+                }else if(activeFace == 2){
+                    activeLayer = rotatableLayers.get("XYbot");
+                    rotationYaw(false);
+                }else if(activeFace == 0){
+                    activeLayer = rotatableLayers.get("XYtop");
+                    rotationYaw(true);
+                }break;
             case "face0":
                 activeFace = 0;
                 rotation.rotY(-Math.PI/2);
@@ -703,6 +653,7 @@ public final class Roobik extends MouseAdapter implements KeyListener{
             default:
                 break;
         }
+        System.err.println(str(currentCubeLayout));
     }
 
     @Override
@@ -742,5 +693,4 @@ public final class Roobik extends MouseAdapter implements KeyListener{
     @Override
     public void keyReleased(KeyEvent ke) {
     }
-  
 }
