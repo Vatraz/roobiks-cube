@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package roobik;
 
 import com.sun.j3d.utils.geometry.Box;
@@ -19,7 +14,7 @@ import javax.media.j3d.TransparencyAttributes;
 import javax.vecmath.Point3f;
 import javax.vecmath.Vector3f;
 
-
+/** GUI buttons */
 public class CubeButtons {
     public TransformGroup tg;
     
@@ -58,13 +53,13 @@ public class CubeButtons {
         ta.setTransparencyMode (TransparencyAttributes.BLENDED);
         ta.setTransparency (0.5f);
        
-        //PRZESUNIECIE KONTROLEK
+        //MOVE CONTROLS
         float x = -1.8f;
         float y = -1.75f;
         Transform3D shift = new Transform3D();
         shift.set(new Vector3f(x,y,0.0f));
         
-        //TEXTURA
+        //TEXTURE
         Appearance[] minicubeAppearance = new Appearance[4];
         for (int i=0; i<4; i+=1){
             minicubeAppearance[i] = new Appearance();

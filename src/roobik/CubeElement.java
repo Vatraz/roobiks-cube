@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package roobik;
 
 import com.sun.j3d.utils.geometry.Box;
@@ -11,7 +6,7 @@ import javax.media.j3d.Transform3D;
 import javax.media.j3d.TransformGroup;
 import javax.vecmath.Vector3f;
 
-
+/** Single element of the cube*/
 public class CubeElement{
         public TransformGroup tg = new TransformGroup();
         public Transform3D position = new Transform3D();

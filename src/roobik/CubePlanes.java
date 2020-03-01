@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package roobik;
 
 import javax.media.j3d.Appearance;
@@ -13,10 +8,7 @@ import javax.media.j3d.TransparencyAttributes;
 import static javax.media.j3d.TransparencyAttributes.BLENDED;
 import javax.vecmath.Point3f;
 
-/**
- *
- * @author Gruby
- */
+/** Invisible planes used to select the active face of the cube.*/
 public class CubePlanes {
     public TransformGroup tg;
     

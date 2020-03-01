@@ -11,8 +11,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,52 +24,57 @@ import java.util.regex.Pattern;
 import javax.media.j3d.*;
 import javax.vecmath.Vector3f;
 
-/**
- * @author PotezneSzwagry
- */
+
 public final class Roobik extends MouseAdapter implements KeyListener{
     
-    /** Gdy true, obroty odbywaja sie bez animacji */
-    private boolean noAnimation;
-    /** Przyjmuje wartosc true, jeżeli trwa układanie. 
-     *  Zmiana wartosci na false rozpoczyna oddtwarzanie zapisanych ruchów */
+    /** Enables saving subsequent actions - moves and active faces */
     private boolean saveActions;
-    /** Jezeli true trwa animowane odtwarzanie zapamietanych ruchow */
-    private boolean playReplayOn;
-    /** Wybrana sciana przy ktorej rozpoczelo sie odtwarzanie trasy. 
-     *  Po jej odtworzeniu jest znowu wybierana */
-    /** Lista kolejno wybranych przez uzytkownika ruchow */ 
+    /** Enables playback of saved moves */
+    private boolean savedActionsReplayOn;
+    /** List of saved moves*/ 
     private List<String> savedMovesList = new ArrayList<>();
-    /** Lista kolejno wybranych przez uzytkownika scian */ 
+    /** List of {@link Roobik#activeFace} values 
+     * corresponding to values of {@link Roobik#savedMovesList}*/ 
     private List<Integer> savedFacesList = new ArrayList<>();
-    /** Lista kolejno wybranych w procesie losowania ruchow */ 
-    private List<String> randomMovesList = new ArrayList<>();
-    /** Lista kolejno wybranych w procesie losowania scian */ 
-    private List<Integer> randomFacesList = new ArrayList<>(); 
-    /** Wybrana sciana, dla ktorej interpretowane sa polecenia */
+    /** List of randomly chosen moves*/ 
+    private final List<String> randomMovesList = new ArrayList<>();
+    /** List of {@link Roobik#activeFace} values 
+     * corresponding to values of {@link Roobik#randomMovesList}*/ 
+    private final List<Integer> randomFacesList = new ArrayList<>(); 
+    
+    /** Currently selected face*/
     private int activeFace;
-        
-    /** Licznik klatek animacji. Jezeli przyjmuje wartosc 0, timerAnimacja
-     *  rozpoczyna swoje dzilanie, az do zwiekszenia wartosci parametru do 20. */
+    
+    /** Enables animation of rotation */
+    private boolean noAnimation;    
+    /** Animation counter, turns on animation if its value is 0 and 
+     * {@link Roobik.noAnimation} is true */
     private int animationCounter;
+    /** Blocks user input */
+    private boolean blockInput; 
 
-    /** Blokada przyjmowania polecen podczas animacji */
-    private boolean blockInput;            //BLOKADA PODCZAS ANIMACJI
-    /** Srodkowy element sciany kostki */
-    /** Kat o jaki maja obracac sie elementy */
+    /** Transform3D holding information on elements rotation */
     private final Transform3D rotation;
         
-    /** Tablica poszczegolnych warstw kostki - kolejno 0-8, 9-16, 17-25 */ 
+    /** Array of all elements in the cube. The indexes 0-8 correspond 
+     *  to layer one, 9-16 layer two and 17-25 layer three. The value 
+     *  corresponding to a given index tells what element is currently 
+     *  in this place. */ 
     private int[] currentCubeLayout = new int[26];
     
+    /** 3D model of the cube */
     private final Cube cube3D;
+    
+    /** Map of the cube layers that can be rotated. */
     Map<String, Layer> rotatableLayers;
     
+    /** Refers to currently chosen layer. */
     private Layer activeLayer;
     
-    //CANVAS
     private final PickCanvas pickCanvas;  
     
+    /** Contains the middle element of layer (-1 if none) and all 
+     *  its elements. */
     private class Layer{
         public int middleElement;
         public int[] elementsToRotate;
@@ -80,34 +85,32 @@ public final class Roobik extends MouseAdapter implements KeyListener{
         }
     }
     
-    /** 
-     * Odtwarzanie zapisanych w listach ruchow, symulacja wcisniecia przycisku
-     * @param index numer elementu listy
-     * @param facesList lista zawierajaca kolejne wybrane sciany
-     * @param movesList lista zawierajaca kolejne wybrane ruchy
-    */
-    private void followActionsList(int index, List<Integer> facesList, List<String> movesList){      
+    /** Follows commands stored in lists. 
+     *  @param index index of actions in list.
+     *  @param facesList list of faces 
+     *  @param movesList list of moves */
+    private void commandFromLists(int index, List<Integer> facesList, List<String> movesList){      
         if(null != facesList.get(index))
             activeFace = facesList.get(index); 
-            
         if(null != movesList.get(index)) 
             executeCommand(movesList.get(index));
     }
     
-    /** 
-     * Ulozenie wylosowanego ukladu, poporzez symulowanie wciskania przyciskow,
-     * przy wylaczonej animacji.
-     */
-    private void followRandomActions(int activeFaceBuffor){
+    /** Arrange the cube without animation based on the actions stored in 
+     *  {@link Roobik#randomFacesList} and {@link Roobik#randomMovesList} */
+    private void followRandomActions(){
+        int activeFaceBuffor = activeFace;
         noAnimation = true;
         saveActions = false;
         for(int i =0; i<randomMovesList.size(); i++)
-            followActionsList(i, randomFacesList, randomMovesList);
+            commandFromLists(i, randomFacesList, randomMovesList);
         saveActions = true;
         noAnimation = false;    
         activeFace = activeFaceBuffor;
     }
     
+    /** Undoes last actions stored in {@link Roobik#randomFacesList} and 
+     *  {@link Roobik#randomMovesList} and deletes them */
     private void undoAcition(){
         if (savedMovesList.isEmpty()) return;
         String move = savedMovesList.remove(savedMovesList.size() - 1);
@@ -131,34 +134,33 @@ public final class Roobik extends MouseAdapter implements KeyListener{
         activeFace = activeFaceBuffor;
     }
     
-    
+    /** Modifies {@link Roobik#randomMovesList} by adding the passed move ID. 
+     *  Adds the current value of {@link Roobik#activeFace} to 
+     *  {@link Roobik#randomFacesList}. */
     private void addMoveToSavedList(String move){
         savedMovesList.add(move);
         savedFacesList.add(activeFace);
     }
     
-    /** 
-     * Realizacja odtwarzania zapamietanych ruchow, poprzez symulowanie wciskania przyciskow 
-     * w stałych odstępach czasu. Dziala pod warunkiem pozytywnej wartosci {@link klikaczAnimowanyOn#playReplay}
-     */
+    /** Plays saved actions if {@link Roobik#savedActionsReplayOn} is true */
     TimerTask timerReplay = new TimerTask() {
         int replayCounter = 0;
         int activeFaceBuffor;
         @Override
         public void run() {
-            if(playReplayOn){
+            if(savedActionsReplayOn){
                 if(replayCounter==0){
                     saveActions = false;
                     activeFaceBuffor = activeFace;
                 }
                 if(replayCounter < savedMovesList.size()){
-                    followActionsList(replayCounter, savedFacesList, savedMovesList);
+                    commandFromLists(replayCounter, savedFacesList, savedMovesList);
                     replayCounter++;
                 } else
                 if(replayCounter == savedMovesList.size()){  
                     blockInput = false;
                     saveActions = true;
-                    playReplayOn = false;
+                    savedActionsReplayOn = false;
                     replayCounter = 0;
                     activeFace = activeFaceBuffor;
                 }
@@ -166,10 +168,7 @@ public final class Roobik extends MouseAdapter implements KeyListener{
         }
     };
         
-    /** 
-     * Wykonywanie pelnego obrotu elementow kostki znajdujacych sie w 
-     * tablicy {@link #elementsToRotateList}, bez animacji 
-     */
+    /** Rotates 3D cube elements without animation. */
     private void rotateWithoutAnimation(){
         for ( int i = 0; i < 8; i++){                                                           
             int elementToRotate = currentCubeLayout[activeLayer.elementsToRotate[i]];
@@ -182,15 +181,13 @@ public final class Roobik extends MouseAdapter implements KeyListener{
         blockInput = false;
     }
     
+    /** Starts the animation handled by {@link Roobik#timerAnimation}. */
     private void rotateWithAnimation(){
         animationCounter = 0;
     }
     
-    /** 
-     * Animowane obracanie wybranych elementow kostki znajdujacych sie w tablicy,
-     * {@link #elementsToRotateList}. Dziala gdy {@link #animationCounter} = 0, 
-     * nastepnie, po wykonaniu animacji zmienia jego wartosc na 20
-     */
+    /** If {@link Roobik#animationCounter} is 0, animate rotation of elements 
+     *  stored in {@link Roobik#activeLayer}. */
     TimerTask timerAnimation = new TimerTask() {
         @Override
         public void run() {            
@@ -209,14 +206,11 @@ public final class Roobik extends MouseAdapter implements KeyListener{
         } 
     };
            
-    /** 
-     * Aktualizacja ukladu kostki na ten po wykonaniu zadanego ruchu, i nastepnie wykonanie obrotu.
-     * W zaleznosci od wartosci {@link #noAnimation} realizuje go z animacja lub bez.
-     */
+    /** Updates the current cube layout by changing values stored in 
+     *  {@link Roobik#currentCubeLayout} 
+     *  @param inverted if true, the elements will be rotated in opposite 
+     *  direction */
     private void executeElementsRotation(boolean inverted){
-        System.out.println(activeFace);
- 
-        //ZMIANA ULOZENIA KOSTKI
         blockInput = true;
         int elementNumber;
         int elementNumberPlus;
@@ -224,21 +218,20 @@ public final class Roobik extends MouseAdapter implements KeyListener{
         int prevElementNumberPlus = -1;
         
         int[] elementsToRotateArr = activeLayer.elementsToRotate.clone();
+        // If rotation is inverted
         if (inverted){
             int n = elementsToRotateArr.length;
             for (int i = 0; i < n / 2; i++) { 
                 int buf = elementsToRotateArr[i]; 
                 elementsToRotateArr[i] = elementsToRotateArr[n - i - 1]; 
                 elementsToRotateArr[n - i - 1] = buf; 
-            } 
+            }
         }
-        System.out.println(str(elementsToRotateArr));
-
         
         int firstElementNumber = elementsToRotateArr[0];
         int firstElementNumberPlus = elementsToRotateArr[1];
         
-        //ZMIANA UKLADU KOSTKI W TABLICY
+        // Change the layout of elements in the cube 
         for ( int i = 0; i < 7; i=i+2){                            
                 elementNumber = currentCubeLayout[elementsToRotateArr[i]];
                 elementNumberPlus = currentCubeLayout[elementsToRotateArr[i+1]];      
@@ -249,22 +242,14 @@ public final class Roobik extends MouseAdapter implements KeyListener{
         }
         currentCubeLayout[firstElementNumber] = prevElementNumber;
         currentCubeLayout[firstElementNumberPlus] = prevElementNumberPlus;
-        
-        //ANIMACJA W PRZYPADKU NORMALNEGO UKLADANIA/ODTWARZANIA W PRZECIWNYM RAZIE OPCJA SZYBKA
-        if(!noAnimation)
-            rotateWithAnimation();
-        else
-            rotateWithoutAnimation();
     }
     
     /** 
-     * Wybor kierunku obrotu - poziomo - oraz ustawienie skoku animacji, {@link #rotation},
-     * w zaleznosci od wartosci {@link #noAnimation}.
+     * Calculate {@link #rotation} along the Y-axis, depending on the  
+     * value of {@link noAnimation} and {@link inverted}. 
+     * @param inverted inversion of the default rotation direction.
      */
     private void rotationPitch(boolean inverted){
-        String a;
-        if (inverted) a = "-"; else a = "+";
-        System.err.println("PITCH" + a);
         if(inverted == false){
             if(!noAnimation)rotation.rotY(Math.PI/40);
             else rotation.rotY(Math.PI/2);
@@ -273,16 +258,16 @@ public final class Roobik extends MouseAdapter implements KeyListener{
             else rotation.rotY(-Math.PI/2);
         }        
         executeElementsRotation(inverted);
+        if(!noAnimation) rotateWithAnimation();
+        else rotateWithoutAnimation();
     }
     
     /** 
-     * Wybor kierunku obrotu - pionowo - oraz ustawienie skoku animacji, {@link #rotation},
-     * w zaleznosci od wartosci {@link #noAnimation}.
+     * Calculate {@link #rotation} along the X-axis, depending on the  
+     * value of {@link noAnimation} and {@link inverted}. 
+     * @param inverted inversion of the default rotation direction.
      */
     private void rotationRoll (boolean inverted){
-        String a;
-        if (inverted) a = "-"; else a = "+";
-        System.err.println("ROLL" + a);
         if(inverted == false){
             if(!noAnimation)rotation.rotX(Math.PI/40);
             else rotation.rotX(Math.PI/2);
@@ -291,24 +276,16 @@ public final class Roobik extends MouseAdapter implements KeyListener{
             else rotation.rotX(-Math.PI/2);
         }               
         executeElementsRotation(inverted);
+        if(!noAnimation) rotateWithAnimation();
+        else rotateWithoutAnimation();
     }
     
-    private String str(int[] list){ 
-        String a = "";
-        for(int i =0; i<list.length; i++){
-            a = a + Integer.toString(list[i]) + ", ";
-        }
-        return a;
-    };
-    
     /** 
-     * Wybor kierunku obrotu - w poprzek - oraz ustawienie skoku animacji, {@link #rotation},
-     * w zaleznosci od wartosci {@link #noAnimation}.
+     * Calculate {@link #rotation} along the Z-axis, depending on the  
+     * value of {@link noAnimation} and {@link inverted}. 
+     * @param inverted inversion of the default rotation direction.
      */
     private void rotationYaw( boolean inverted){
-        String a;
-        if (inverted) a = "-"; else a = "+";
-        System.err.println("YAW" + a);
         if(inverted == false){
             if(!noAnimation)rotation.rotZ(Math.PI/40);
             else rotation.rotZ(Math.PI/2);
@@ -317,17 +294,27 @@ public final class Roobik extends MouseAdapter implements KeyListener{
             else rotation.rotZ(-Math.PI/2);
         }     
         executeElementsRotation(inverted);
+        if(!noAnimation) rotateWithAnimation();
+        else rotateWithoutAnimation();
     }
     
+    /** Clears all lists containing saved actions: {@link Roobik#savedMovesList}
+     *  {@link Roobik#savedFacesList}, {@link Roobik#randomMovesList} and 
+     *  {@link Roobik#randomFacesList} */
+    void clearSavedLists(){
+        savedMovesList.clear();
+        savedFacesList.clear();
+        randomMovesList.clear();
+        randomFacesList.clear();
+    }
+    
+    /** Resets {@link Roobik#currentCubeLayout} and 3D model of the cube */
     void cubeReset(){
         cube3D.elementsReset();
         for (int i=0; i<26; i++)
             currentCubeLayout[i]=i;
     }
-    
-    /** 
-     * Konstruktor klasy Roobik 
-     */
+
     public Roobik(){
         System.setProperty("sun.awt.noerasebackground", "true");
         activeFace = 1;
@@ -336,12 +323,13 @@ public final class Roobik extends MouseAdapter implements KeyListener{
         rotation = new Transform3D();
         noAnimation = false;
         saveActions = true;
-        playReplayOn = false;
+        savedActionsReplayOn = false;
+        
         //CANVAS
         GraphicsConfiguration config = SimpleUniverse.getPreferredConfiguration();
         Canvas3D canvas3D = new Canvas3D(config);
         SimpleUniverse universe = new SimpleUniverse(canvas3D);
-        Frame frame = new Frame("Kostka ogurat tego typu bec");       
+        Frame frame = new Frame("R00bik");       
         frame.setResizable(false);
         canvas3D.setSize(800, 800);
         canvas3D.addKeyListener(this);
@@ -352,6 +340,8 @@ public final class Roobik extends MouseAdapter implements KeyListener{
         //SCENE GRAPH
         BranchGroup scene = cube3D.sceneGraph;
         universe.addBranchGraph(scene);
+        
+        //OBSERVER
         Transform3D observerTransform = new Transform3D();
         observerTransform.set(new Vector3f(0.0f, 0.0f, 4.7f));
         universe.getViewingPlatform().getViewPlatformTransform().setTransform(observerTransform);
@@ -382,10 +372,8 @@ public final class Roobik extends MouseAdapter implements KeyListener{
         Roobik roobik = new Roobik();
     }
     
-    /** 
-     * Creates arrays of randomly chosen faces and moves.
-     * Updates {@link Roobik#randomMovesList } and {@link Roobik#randomFacesList } 
-     */
+    /** Creates arrays of randomly chosen faces and moves.
+     *  Updates {@link randomMovesList } and {@link randomFacesList} */
     void createRandomActionsList(){
         Random generator = new Random();
         int[] availableFaces = {0, 1, 2, 3, 4, 5, 6};
@@ -399,7 +387,7 @@ public final class Roobik extends MouseAdapter implements KeyListener{
         }
     }
     
-    
+    /** Returns a map containing all layers that can be rotated */
     private HashMap createRotatablelayers(){
         HashMap map = new HashMap<String, Layer>();
         map.put("ZXtop", new Layer(10, new int[] {0, 1, 2, 11, 19, 18, 17, 9}));
@@ -427,198 +415,120 @@ public final class Roobik extends MouseAdapter implements KeyListener{
         }
     }
     
-    /** 
-     * Wykonanie obslugiwanej przez program komendy
-     * @param command id komendy 
-     */
+    /** Executes the passed command */
     void executeCommand(String command){
+        boolean inverseDefault = true;
         switch (command) {
             case "undo":  //resetowanie ukladu              
                 undoAcition();
                 break;  
             case "reset":  //resetowanie ukladu              
-                savedMovesList.clear();
-                savedFacesList.clear();
-                randomMovesList.clear();
-                randomFacesList.clear();
+                clearSavedLists();
                 cubeReset(); 
                 break;   
-            case "random":  //tasowanie kostki                          
-                savedMovesList.clear();
-                savedFacesList.clear();
-                randomMovesList.clear();
-                randomFacesList.clear();
+            case "random":  //tasowanie kostki 
+                clearSavedLists();
                 cubeReset();
                 createRandomActionsList();
-                followRandomActions(activeFace);
+                followRandomActions();
                 break;   
             case "play":  //odtwarzanie              
                 cubeReset();
-                followRandomActions(activeFace);
-                playReplayOn = true;
+                followRandomActions();
+                savedActionsReplayOn = true;
                 break; 
-            case "right0":
-                if (saveActions) addMoveToSavedList("right0");
-                if(activeFace >=0 && activeFace <=3){
-                    activeLayer = rotatableLayers.get("ZXtop");
-                    rotationPitch(false);
-                }else if(activeFace == 4){
-                    activeLayer = rotatableLayers.get("XYbot");
-                    rotationYaw(true);
-                }else if(activeFace == 5){
-                    activeLayer = rotatableLayers.get("XYtop");
-                    rotationYaw(false);
-                } break;
-            case "right1":
-                if (saveActions) addMoveToSavedList("right1");
-                if(activeFace >=0 && activeFace <=3){
-                    activeLayer = rotatableLayers.get("ZXmid");
-                    rotationPitch(false);
-                }else if(activeFace == 4){
-                    activeLayer = rotatableLayers.get("XYmid");
-                    rotationYaw(true); 
-                }else if(activeFace == 5){
-                    activeLayer = rotatableLayers.get("XYmid");
-                    rotationYaw(false);
-                } break;
-            case "right2":
-                if (saveActions) addMoveToSavedList("right2");
-                if(activeFace >=0 && activeFace <=3){
-                    activeLayer = rotatableLayers.get("ZXbot");
-                    rotationPitch(false);
-                }else if(activeFace == 4){
-                    activeLayer = rotatableLayers.get("XYtop");
-                    rotationYaw(true);
-                }else if(activeFace == 5){
-                    activeLayer = rotatableLayers.get("XYbot");
-                    rotationYaw(false);
-                } break;
             case "left0":
-                if (saveActions) addMoveToSavedList("left0");
+                inverseDefault = false;
+            case "right0":
+                if (saveActions) addMoveToSavedList(command);
                 if(activeFace >=0 && activeFace <=3){
                     activeLayer = rotatableLayers.get("ZXtop");
-                    rotationPitch(true);
+                    rotationPitch(!inverseDefault);
                 }else if(activeFace == 4){
                     activeLayer = rotatableLayers.get("XYbot");
-                    rotationYaw(false);
+                    rotationYaw(inverseDefault);
                 }else if(activeFace == 5){
                     activeLayer = rotatableLayers.get("XYtop");
-                    rotationYaw(true);
+                    rotationYaw(!inverseDefault);
                 } break;
             case "left1":
-                if (saveActions) addMoveToSavedList("left1");
+                inverseDefault = false;
+            case "right1":
+                if (saveActions) addMoveToSavedList(command);
                 if(activeFace >=0 && activeFace <=3){
                     activeLayer = rotatableLayers.get("ZXmid");
-                    rotationPitch(true);
+                    rotationPitch(!inverseDefault);
                 }else if(activeFace == 4){
                     activeLayer = rotatableLayers.get("XYmid");
-                    rotationYaw(false); 
+                    rotationYaw(inverseDefault); 
                 }else if(activeFace == 5){
                     activeLayer = rotatableLayers.get("XYmid");
-                    rotationYaw(true);
+                    rotationYaw(!inverseDefault);
                 } break;
-            case "left2":                
-                if (saveActions) addMoveToSavedList("left2");
+            case "left2":
+                inverseDefault = false;
+            case "right2":
+                if (saveActions) addMoveToSavedList(command);
                 if(activeFace >=0 && activeFace <=3){
                     activeLayer = rotatableLayers.get("ZXbot");
-                    rotationPitch(true);
+                    rotationPitch(!inverseDefault);
                 }else if(activeFace == 4){
                     activeLayer = rotatableLayers.get("XYtop");
-                    rotationYaw(false);
+                    rotationYaw(inverseDefault);
                 }else if(activeFace == 5){
                     activeLayer = rotatableLayers.get("XYbot");
-                    rotationYaw(true);
+                    rotationYaw(!inverseDefault);
                 } break;
             case "down0":
-                if (saveActions) addMoveToSavedList("down0");
+                inverseDefault = false;
+            case "up0":
+                if (saveActions) addMoveToSavedList(command);
                 if(activeFace == 1 || activeFace == 4 || activeFace == 5){
                     activeLayer = rotatableLayers.get("YZbot");
-                    rotationRoll(false);
+                    rotationRoll(inverseDefault);
                 }else if(activeFace == 3){
                     activeLayer = rotatableLayers.get("YZtop");
-                    rotationRoll(true);
+                    rotationRoll(!inverseDefault);
                 }else if(activeFace == 2){
                     activeLayer = rotatableLayers.get("XYtop");
-                    rotationYaw(true);
+                    rotationYaw(!inverseDefault);
                 }else if(activeFace == 0){
                     activeLayer = rotatableLayers.get("XYbot");
-                    rotationYaw(false);
+                    rotationYaw(inverseDefault);
                 }break;
             case "down1":
-                if (saveActions) addMoveToSavedList("down1");
+                inverseDefault = false;
+            case "up1":
+                if (saveActions) addMoveToSavedList(command);
                 if(activeFace == 1 || activeFace == 4 || activeFace == 5){
                     activeLayer = rotatableLayers.get("YZmid");
-                    rotationRoll(false);
+                    rotationRoll(inverseDefault);
                 }else if(activeFace == 3){
                     activeLayer = rotatableLayers.get("YZmid");
-                    rotationRoll(true);
+                    rotationRoll(!inverseDefault);
                 }else if(activeFace == 2){
                     activeLayer = rotatableLayers.get("XYmid");
-                    rotationYaw(true);
+                    rotationYaw(!inverseDefault);
                 }else if(activeFace == 0){
                     activeLayer = rotatableLayers.get("XYmid");
-                    rotationYaw(false);
+                    rotationYaw(inverseDefault);
                 }break;
             case "down2":
-                if (saveActions) addMoveToSavedList("down2");
-                if(activeFace == 1 || activeFace == 4 || activeFace == 5){
-                    activeLayer = rotatableLayers.get("YZtop");
-                    rotationRoll(false);
-                }else if(activeFace == 3){
-                    activeLayer = rotatableLayers.get("YZbot");
-                    rotationRoll(true);
-                }else if(activeFace == 2){
-                    activeLayer = rotatableLayers.get("XYbot");
-                    rotationYaw(true);
-                }else if(activeFace == 0){
-                    activeLayer = rotatableLayers.get("XYtop");
-                    rotationYaw(false);
-                }break;
-            case "up0":
-                if (saveActions) addMoveToSavedList("up0");
-                if(activeFace == 1 || activeFace == 4 || activeFace == 5){
-                    activeLayer = rotatableLayers.get("YZbot");
-                    rotationRoll(true);
-                }else if(activeFace == 3){
-                    activeLayer = rotatableLayers.get("YZtop");
-                    rotationRoll(false);
-                }else if(activeFace == 2){
-                    activeLayer = rotatableLayers.get("XYtop");
-                    rotationYaw(false);
-                }else if(activeFace == 0){
-                    activeLayer = rotatableLayers.get("XYbot");
-                    rotationYaw(true);
-                }break;
-            case "up1":
-                if (saveActions) addMoveToSavedList("up1");
-                if(activeFace == 1 || activeFace == 4 || activeFace == 5){
-                    activeLayer = rotatableLayers.get("YZmid");
-                    rotationRoll(true);
-                }else if(activeFace == 3){
-                    activeLayer = rotatableLayers.get("YZmid");
-                    rotationRoll(false);
-                }else if(activeFace == 2){
-                    activeLayer = rotatableLayers.get("XYmid");
-                    rotationYaw(false);
-                }else if(activeFace == 0){
-                    activeLayer = rotatableLayers.get("XYmid");
-                    rotationYaw(true);
-                }break;
+                inverseDefault = false;
             case "up2":
-                if (saveActions) addMoveToSavedList("up2");
-                if (saveActions) addMoveToSavedList("down2");
+                if (saveActions) addMoveToSavedList(command);
                 if(activeFace == 1 || activeFace == 4 || activeFace == 5){
                     activeLayer = rotatableLayers.get("YZtop");
-                    rotationRoll(true);
+                    rotationRoll(inverseDefault);
                 }else if(activeFace == 3){
                     activeLayer = rotatableLayers.get("YZbot");
-                    rotationRoll(false);
+                    rotationRoll(!inverseDefault);
                 }else if(activeFace == 2){
                     activeLayer = rotatableLayers.get("XYbot");
-                    rotationYaw(false);
+                    rotationYaw(!inverseDefault);
                 }else if(activeFace == 0){
                     activeLayer = rotatableLayers.get("XYtop");
-                    rotationYaw(true);
+                    rotationYaw(inverseDefault);
                 }break;
             case "face0":
                 activeFace = 0;
@@ -653,7 +563,6 @@ public final class Roobik extends MouseAdapter implements KeyListener{
             default:
                 break;
         }
-        System.err.println(str(currentCubeLayout));
     }
 
     @Override

@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package roobik;
 
 import javax.media.j3d.Appearance;
@@ -17,10 +12,7 @@ import javax.media.j3d.TriangleArray;
 import javax.vecmath.Color3f;
 import javax.vecmath.Point3f;
 
-/**
- *
- * @author Gruby
- */
+/** Arrows used to control the cube */
 public class CubeArrows {
     public TransformGroup tg;
     
@@ -44,7 +36,6 @@ public class CubeArrows {
         tg = new TransformGroup();
         tg.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
         
-        //USTAWIENIE APPEARANCE DLA STRZALEK
         Appearance arrowTransparency = getAppearance();
         
         TriangleArray wsp;

@@ -12,10 +12,7 @@ import javax.media.j3d.TransformGroup;
 import javax.vecmath.Color3f;
 import javax.vecmath.Vector3f;
 
-/**
- *
- * @author Gruby
- */
+/** Elements that together make up the cube */
 public class CubeCube {
     public CubeElement[] elemList;
     public TransformGroup tg;

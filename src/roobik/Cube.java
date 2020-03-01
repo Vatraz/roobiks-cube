@@ -13,24 +13,16 @@ import javax.vecmath.Color3f;
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3f;
 
-/**
- * Klasa obslugujaca inicjalizacje elementow kostki, a takze losowanie jej ukladu
- * oraz przywrocenie go do stanu poczatkowego
- * @author PotezneSzwagry
- */
+/** 3D model of the cube */
 public class Cube { 
     public BranchGroup sceneGraph;
     private CubeArrows cubeArrows;
-    public TransformGroup tgArrows;
-    final private CubeCube cube;
+    private CubeCube cube;
 
     void rotateElement(int id, Transform3D rotation){
        cube.elemList[id].mulTransform(rotation);
    }
        
-    /** 
-     * Przywrocenie ukladu kostki do jego stanu poczatkowego 
-     */
     void elementsReset(){
         cube.transformsReset();
     }
@@ -39,70 +31,82 @@ public class Cube {
         cubeArrows.setTransform(rotation);
     }     
     
-    private void addElemsSceneGraph(TransformGroup tgCube, BoundingSphere bound) {
-        //STRZALKI
-        cubeArrows = new CubeArrows();
-        tgCube.addChild(cubeArrows.tg);
-        
-        //GUI
-        TransformGroup gui = new TransformGroup();
-        gui.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-        
-        //STWORZENIE KOSTKI
-        CubePlanes cubePlanes = new CubePlanes();
-        tgCube.addChild(cubePlanes.tg);
+    private TransformGroup cubeTransformGroup() {
+        TransformGroup tgCube = new TransformGroup();
+        tgCube.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+
+        //ELEMENTS OF THE CUBE
+        cube = new CubeCube();
         tgCube.addChild(cube.tg);
         
-        //DZIEN DOBRY Z TEJ STRONY MYSZ
-        MouseRotate mouseRotate = new MouseRotate();
-        mouseRotate.setTransformGroup(tgCube);
-        mouseRotate.setSchedulingBounds(bound);
-        sceneGraph.addChild(mouseRotate);
- 
-        //DODANIE ELEMENTOW DO GRAFU        
+        //ARROWS
+        cubeArrows = new CubeArrows();
+        tgCube.addChild(cubeArrows.tg);
+               
+        //PLANES
+        CubePlanes cubePlanes = new CubePlanes();
+        tgCube.addChild(cubePlanes.tg);
+
+        return tgCube;
+    }
+    
+    private TransformGroup guiTransformGroup() {
+        //GUI
+        TransformGroup tgGUI = new TransformGroup();
+        tgGUI.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+        
+        //BUTTONS       
         CubeButtons cubeButtons = new CubeButtons();
-        gui.addChild(cubeButtons.tg);
+        tgGUI.addChild(cubeButtons.tg);
         
-        gui.addChild(tgCube);
         
-        sceneGraph.addChild(gui); 
+        
+        return tgGUI;
     }
     
     final BranchGroup createSceneGraph(BoundingSphere bound){
-        BranchGroup grafS = new BranchGroup();
+        BranchGroup graph = new BranchGroup();
 
-        //TEKSTURA
+        //TEXTURE
         TextureLoader bgTexture = new TextureLoader("img/background.jpg", null);
 	Background bg = new Background(bgTexture.getImage());
 	bg.setApplicationBounds(bound);
-	grafS.addChild(bg);
+	graph.addChild(bg);
         
-        //USTAWIENIE SWIATEL
+        //LIGHTS
         Vector3f vectorDir  = new Vector3f(-8.0f, -5.0f, -9.0f);
 	Color3f kolorDir = new Color3f(0.45f, .4f, 0.45f);
         DirectionalLight swiatloDir = new DirectionalLight(kolorDir, vectorDir);
 	swiatloDir.setInfluencingBounds(bound);
-        grafS.addChild(swiatloDir);
+        graph.addChild(swiatloDir);
         Color3f kolorAmbient = new Color3f(0.5f, 0.4f, 0.3f);
         AmbientLight swiatloAmbient = new AmbientLight(kolorAmbient);
         swiatloAmbient.setInfluencingBounds(bound);
-        grafS.addChild(swiatloAmbient);
+        graph.addChild(swiatloAmbient);
         
-        return grafS;
+        return graph;
     }
     
 
     public Cube(){
-        cube = new CubeCube();
-        TransformGroup tgCube = new TransformGroup();
-        tgCube.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-
         BoundingSphere bound = new BoundingSphere(new Point3d(0.0,0.0,0.0), 100.0);
 
         sceneGraph = createSceneGraph(bound);
-        addElemsSceneGraph(tgCube, bound);
+               
+        //CUBE
+        TransformGroup cubeTG = cubeTransformGroup();
         
+        //GUI
+        TransformGroup guiTG = guiTransformGroup();
+        guiTG.addChild(cubeTG);
+        sceneGraph.addChild(guiTG); 
+        
+        //MOUSE
+        MouseRotate mouseRotate = new MouseRotate();
+        mouseRotate.setTransformGroup(cubeTG);
+        mouseRotate.setSchedulingBounds(bound);
+        sceneGraph.addChild(mouseRotate);
+        
+        //GUI
     }
-    
-    
 }
