@@ -1,9 +1,8 @@
 # roobiks-cube
-Rubik's Cube written in Java 8.0 using Java3D API 1.6.
+Rubik's Cube written in Java 8 using Java3D API v1.6.
 
 The application allows you to rotate the cube elements around XYZ axes, undo moves, 
 randomize and reset the cube layout, and replay all the moves.
-
 
 ![GIF](https://media.giphy.com/media/Ih1mTcsB02wxHegS2q/giphy.gif)
 
